@@ -1,0 +1,56 @@
+---
+description: Core context and invariants for the Personal Board app
+alwaysApply: true
+---
+
+# Personal Board — core rules
+
+A peer-accountability platform for entrepreneur boards running the Wheel of Life
+and Wheel of Business practice on a fortnightly review cycle. Full detail in
+`docs/PROJECT_SPEC.md`; the agreed screens are in `docs/wireframe.html`.
+
+## Invariants — never violate these
+
+1. **Every score is self-rated.** Nothing is derived, averaged or rolled up.
+   The business wheel never computes the Business spoke on the life wheel. If a
+   feature would compute a score from other scores, stop and ask.
+
+2. **Wheels, plans and tasks belong to the person, not the board.** Never add a
+   `board_id` to `wheels`, `spokes`, `wheel_cycles`, `spoke_scores`,
+   `focus_areas`, `action_plans` or `tasks`. Members carry their history between
+   boards, and that only works because the board does not own it.
+
+3. **Everything below `wheels` is private to its owner.** No member, chairman or
+   superadmin may read another person's wheels, scores, plans or tasks. The only
+   shared surface is: profiles of co-members, the board roster, the meeting
+   calendar, and the counts from `board_velocity`.
+
+4. **`board_velocity` is the only cross-member read**, and it returns counts and
+   names only. Never extend it to return titles, tags, dates or links. Never add
+   a second `SECURITY DEFINER` function that reads member content without asking.
+
+5. **Never write `tasks.completed_on` from application code.** A database
+   trigger owns it.
+
+6. **Never delete a spoke.** Set `is_active = false`. A trigger blocks deletion
+   once a spoke has history; surface its message rather than catching it.
+
+## Deliberately absent — do not add without asking
+
+Cross-member visibility beyond counts · derived or averaged scores ·
+notifications or nudges · definitions of what a score means · assigning tasks to
+other people · completion-percentage metrics.
+
+Each of these was considered and rejected. The outcome this product is after is
+a rounder wheel over time, not a productivity score.
+
+## Tone of the interface
+
+Sentence case. Plain verbs. No exclamation marks. A button says what happens and
+keeps the same word through the flow. An empty screen invites an action; an
+error says what happened and what to do next. Never apologise in UI copy.
+
+## When unsure
+
+`docs/PROJECT_SPEC.md` section 9 lists what was rejected and why. If a request
+conflicts with an invariant above, say so rather than finding a way around it.

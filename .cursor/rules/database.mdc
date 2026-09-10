@@ -1,0 +1,70 @@
+---
+description: Supabase schema, RLS and data access patterns
+globs: ["supabase/**", "src/lib/supabase/**", "**/actions.ts", "**/*.sql"]
+---
+
+# Database and data access
+
+## Migrations
+
+Live in `supabase/migrations/`, numbered, applied in order. Never edit an applied
+migration — add a new one. Regenerate types after any schema change:
+
+```bash
+npx supabase gen types typescript --local > src/lib/database.types.ts
+```
+
+## Row-level security
+
+Every table has RLS enabled. Ownership below `wheels` resolves through helper
+functions — `owns_wheel`, `owns_spoke`, `owns_cycle`, `owns_focus_area`,
+`owns_task` — all `SECURITY DEFINER` with `set search_path = public`.
+
+**Any new table gets a policy in the same migration that creates it.** A table
+with RLS on and no policy is invisible; a table with RLS off is a leak. Neither
+is acceptable.
+
+Board-scoped helpers: `is_superadmin`, `is_board_member`, `is_board_chairman`,
+`shares_board_with`. These are `SECURITY DEFINER` specifically so that policies
+on `board_members` can query `board_members` without recursing. Keep that
+property if you touch them.
+
+## Clients
+
+- `src/lib/supabase/client.ts` — `createBrowserClient`, for client components.
+- `src/lib/supabase/server.ts` — `createServerClient`, async, reads `cookies()`.
+- Middleware refreshes the session. Follow the current `@supabase/ssr` guide
+  exactly, including the `getAll` / `setAll` cookie shape. Do not hand-roll
+  cookie handling.
+
+## The secret key
+
+`SUPABASE_SECRET_KEY` is used by exactly one thing: `inviteUserByEmail` in the
+invite server action. It must never be imported into a client component, a
+shared module that a client component can reach, or any file without
+`'use server'`. If you need an admin client, construct it inside the action.
+
+## Server actions
+
+- Beside the feature, named `actions.ts`, marked `'use server'`.
+- Validate every input with zod before it reaches the database.
+- Never accept a `user_id` from the client. Take it from the session.
+- `revalidatePath` after a mutation that changes a server-rendered view.
+
+## Specific functions
+
+- `create_wheel_cycle(wheel_id, period)` — creates the month's cycle and
+  prefills from the latest earlier one. `SECURITY INVOKER`, so RLS does the
+  ownership check. Call it rather than inserting cycles by hand.
+- `board_velocity(board_id, from, to)` — the only cross-member read. Counts and
+  names only. Raises if the caller is not an active board member.
+- `meeting_window(meeting_id)` — previous meeting to this one.
+
+## Query patterns
+
+- Server components read directly by default.
+- TanStack Query for interactive client views — the task list and the score
+  grid, where optimistic updates matter.
+- Select explicit columns. Never `select('*')` on a table that will grow.
+- Filter by `is_active` when listing spokes for a current view; include inactive
+  ones when rendering a past cycle, or old cycles lose their spokes.

@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal Board — concept wireframe</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --paper:#eef1f4;
+  --frame:#ffffff;
+  --rule:#c3cad3;
+  --hair:#dfe4ea;
+  --block:#dde3ea;
+  --ink:#1c242e;
+  --note:#6f7b89;
+  --deep:#1f4e79;
+  --mid:#6b93b8;
+  --far:#aab8c4;
+  --ui:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --doc:Georgia,"Times New Roman",serif;
+}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--doc);font-size:15px;line-height:1.6}
+
+/* ---------- layout ---------- */
+.wrap{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+.rail{background:#fff;border-right:1px solid var(--rule);padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.rail h1{font-size:17px;padding:0 20px 3px;letter-spacing:-.01em}
+.rail .sub{font-family:var(--ui);font-size:11px;color:var(--note);padding:0 20px 20px}
+.rail .grp{font-family:var(--ui);font-size:10px;letter-spacing:.08em;color:#9aa5b1;padding:16px 20px 6px}
+.rail a{display:block;font-family:var(--ui);font-size:13px;color:#404a56;padding:6px 20px;text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+.rail a:hover{background:#f5f7f9;color:var(--ink)}
+.rail a.on{border-left-color:var(--deep);color:var(--deep);font-weight:600;background:#f2f6fa}
+
+.stage{padding:34px 42px 90px;max-width:1100px}
+.screen{display:none}
+.screen.on{display:block}
+
+.head{margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.step{font-family:var(--ui);font-size:11px;color:var(--note);margin-bottom:4px}
+.head h2{font-size:26px;font-weight:400;letter-spacing:-.02em;margin-bottom:6px}
+.head p{color:#4d5866;max-width:66ch}
+
+/* ---------- wireframe frame ---------- */
+.frame{background:var(--frame);border:1px solid var(--rule);box-shadow:0 1px 0 #fff inset;margin-bottom:8px}
+.chrome{border-bottom:1px solid var(--hair);padding:9px 14px;display:flex;align-items:center;gap:10px;font-family:var(--ui);font-size:12px;background:#fafbfc}
+.chrome .dot{width:8px;height:8px;border-radius:50%;background:var(--block)}
+.chrome .who{margin-left:auto;color:var(--note);font-size:11px}
+.tabs{display:flex;border-bottom:1px solid var(--hair);font-family:var(--ui);font-size:12px;overflow-x:auto}
+.tabs span{padding:9px 14px;color:var(--note);white-space:nowrap}
+.tabs span.sel{color:var(--deep);box-shadow:inset 0 -2px 0 var(--deep);font-weight:600}
+.body{padding:20px}
+
+.cap{font-family:var(--ui);font-size:11px;color:var(--note);margin:0 0 26px 2px}
+
+/* wireframe primitives */
+.lbl{font-family:var(--ui);font-size:10px;letter-spacing:.06em;color:#94a0ac;margin-bottom:5px}
+.fld{border:1px solid var(--rule);height:30px;border-radius:2px;display:flex;align-items:center;padding:0 9px;font-family:var(--ui);font-size:12px;color:#5b6674;background:#fff}
+.fld.ghost{color:#aab4c0}
+.btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;background:var(--deep);color:#fff;font-family:var(--ui);font-size:12px;border-radius:2px}
+.btn.sec{background:#fff;color:#41505f;border:1px solid var(--rule)}
+.row{display:flex;gap:12px}
+.row>*{flex:1}
+.stack{display:flex;flex-direction:column;gap:14px}
+.bar{height:9px;background:var(--block);border-radius:2px}
+.bar.w70{width:70%}.bar.w45{width:45%}.bar.w90{width:90%}.bar.w30{width:30%}
+
+table.wf{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:12px}
+table.wf th{text-align:left;font-size:10px;letter-spacing:.05em;color:#94a0ac;font-weight:600;padding:7px 9px;border-bottom:1px solid var(--rule)}
+table.wf td{padding:9px;border-bottom:1px solid var(--hair);color:#3c4653;vertical-align:top}
+table.wf tr:last-child td{border-bottom:none}
+.chip{display:inline-block;font-size:10px;padding:2px 7px;border:1px solid var(--rule);border-radius:10px;color:#5b6674;background:#fbfcfd}
+.chip.k{border-color:#b7cadb;color:var(--deep);background:#f2f7fb}
+.link{color:var(--deep);border-bottom:1px dotted var(--mid)}
+
+/* annotations */
+.notes{counter-reset:n;margin:18px 0 40px;border-left:2px solid var(--rule);padding-left:20px}
+.notes li{list-style:none;margin-bottom:13px;position:relative;max-width:72ch;color:#3f4a57}
+.notes li::before{counter-increment:n;content:counter(n);position:absolute;left:-31px;top:2px;width:19px;height:19px;border-radius:50%;background:var(--deep);color:#fff;font-family:var(--ui);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.notes b{font-weight:700}
+
+.flag{background:#fff;border:1px solid var(--rule);border-left:3px solid var(--deep);padding:14px 18px;margin:24px 0;max-width:78ch}
+.flag h4{font-family:var(--ui);font-size:12px;margin-bottom:5px}
+.flag p{font-size:14px;color:#4d5866}
+.ask{border-left-color:#a8641e;background:#fdfaf6}
+
+/* wheel */
+.wheelrow{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+.legend{font-family:var(--ui);font-size:11px;color:#5b6674;display:flex;gap:16px;margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;margin-right:5px;vertical-align:middle}
+
+.scoretbl{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:12px}
+.scoretbl th{font-size:10px;color:#94a0ac;text-align:center;padding:5px 4px;border-bottom:1px solid var(--rule);font-weight:600}
+.scoretbl th:first-child{text-align:left}
+.scoretbl td{padding:5px 4px;border-bottom:1px solid var(--hair);color:#3c4653}
+.scoretbl td:first-child{white-space:nowrap}
+.num{width:36px;height:25px;border:1px solid var(--rule);border-radius:2px;display:block;margin:0 auto;text-align:center;line-height:23px;font-size:12px;background:#fff}
+.num.now{border-color:var(--deep);color:var(--deep);font-weight:700}
+
+/* model diagram */
+.model{font-family:var(--ui);font-size:12px;line-height:2;color:#3c4653;background:#fff;border:1px solid var(--rule);padding:20px 24px;white-space:pre;overflow-x:auto}
+
+@media(max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--rule)}
+  .stage{padding:24px 18px 60px}
+  .wheelrow{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="rail">
+  <h1>Personal Board</h1>
+  <div class="sub">Concept wireframe · v1 · for board review</div>
+
+  <div class="grp">The idea</div>
+  <a class="on" data-s="map">How it fits together</a>
+
+  <div class="grp">Setting up</div>
+  <a data-s="join">Joining a board</a>
+  <a data-s="wol">Scoring the life wheel</a>
+  <a data-s="spoke">Inside one spoke</a>
+  <a data-s="wob">Building the business wheel</a>
+
+  <div class="grp">Every day</div>
+  <a data-s="tasks">My tasks</a>
+  <a data-s="edit">Adding a task</a>
+
+  <div class="grp">Every 15 days</div>
+  <a data-s="board">Board dashboard</a>
+  <a data-s="review">The review call</a>
+  <a data-s="progress">A year of scores</a>
+
+  <div class="grp">Behind it</div>
+  <a data-s="admin">Creating boards</a>
+  <a data-s="privacy">Who sees what</a>
+  <a data-s="open">Open questions</a>
+</nav>
+
+<main class="stage">
+
+<!-- ================= MAP ================= -->
+<section class="screen on" id="s-map">
+  <div class="head">
+    <div class="step">The idea</div>
+    <h2>How it fits together</h2>
+    <p>Two wheels, self-rated. Each spoke breaks into focus areas, each focus area into action plans. Tasks are the fortnightly to-do list, and they may point back at an action plan. The board reviews the movement.</p>
+  </div>
+
+  <div class="model">Person
+ │
+ ├── Wheel of Life                      8 fixed spokes, same for everyone
+ │     └── Spoke  ·  Health
+ │           ├── Score      3 now · 5 in 1 year · 8 in 5 years   (self-rated, dated)
+ │           └── Focus area  ·  "Low physical energy"
+ │                 ├── Action plan   45 minutes gym      Challenge: laziness to go
+ │                 ├── Action plan   30 minute walk      Challenge: not sleeping well
+ │                 └── Action plan   weekly core work    Challenge: body pain
+ │
+ ├── Wheel of Business                  spokes you define yourself
+ │     └── Spoke  ·  Sales / Implementation / CSAT / …
+ │           ├── Score
+ │           └── Focus area → action plans
+ │
+ └── Tasks                              one list, all boards
+       └── "Draft the CSAT survey"   tag: WOB   → linked to an action plan
+                                     target date · status · notes
+
+Board  =  roster + meeting calendar + completed/open counts.  Nothing else.</div>
+
+  <ol class="notes">
+    <li><b>Both wheels are rated by hand.</b> The business wheel never calculates the Business spoke on the life wheel. They answer different questions, so they get separate answers.</li>
+    <li><b>Everything belongs to the person, not the board.</b> Move from one board to another and your wheels, plans and task history come with you.</li>
+    <li><b>Tags and links are optional.</b> A task stands on its own. Tagging it WOL, WOB or Open, and pointing it at an action plan, is there when it helps and skipped when it doesn't.</li>
+    <li><b>The board holds almost nothing.</b> A list of members, a meeting calendar, and two counts per member. That is the whole shared surface.</li>
+  </ol>
+</section>
+
+<!-- ================= JOIN ================= -->
+<section class="screen" id="s-join">
+  <div class="head">
+    <div class="step">Setting up · step 1</div>
+    <h2>Joining a board</h2>
+    <p>An invitation arrives by email. The member sets a password, fills in a short profile, and lands on an empty life wheel waiting to be scored.</p>
+  </div>
+
+  <div class="frame" style="max-width:460px">
+    <div class="chrome"><span class="dot"></span><span>Personal Board</span></div>
+    <div class="body stack">
+      <div>
+        <div style="font-family:var(--ui);font-size:15px;font-weight:600;margin-bottom:3px">You have been invited to PB4</div>
+        <div style="font-family:var(--ui);font-size:12px;color:var(--note)">Invited by Janagaran · 8 members</div>
+      </div>
+      <div><div class="lbl">Full name</div><div class="fld">Ramesh</div></div>
+      <div><div class="lbl">Mobile</div><div class="fld ghost">Your number</div></div>
+      <div><div class="lbl">Set a password</div><div class="fld ghost">••••••••</div></div>
+      <div class="row" style="margin-top:4px"><div style="flex:0 0 auto"><span class="btn">Create my account</span></div></div>
+    </div>
+  </div>
+  <p class="cap">Invitation screen — reached from the emailed link.</p>
+
+  <ol class="notes">
+    <li>The account is created with both wheels already in place: the eight life spokes ready to score, and an empty business wheel.</li>
+    <li>Profile is the one personal thing the board can see — name, photo, number. Everything else stays private.</li>
+    <li>One login works across every board a person belongs to.</li>
+  </ol>
+</section>
+
+<!-- ================= WOL ================= -->
+<section class="screen" id="s-wol">
+  <div class="head">
+    <div class="step">Setting up · step 2</div>
+    <h2>Scoring the life wheel</h2>
+    <p>Eight spokes, rated out of ten as they stand today, then where you want them in a year and in five. A round wheel is the goal, so the targets pull every spoke toward the same edge.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>Personal Board</span><span class="who">Janagaran · PB4</span></div>
+    <div class="tabs"><span class="sel">Life wheel</span><span>Business wheel</span><span>Tasks</span><span>Board</span></div>
+    <div class="body">
+      <div class="wheelrow">
+        <div>
+          <svg viewBox="0 0 340 340" width="100%" style="max-width:340px;display:block">
+            <g transform="translate(170,170)">
+              <circle r="130" fill="none" stroke="#e6eaef"/>
+              <circle r="97.5" fill="none" stroke="#eef1f4"/>
+              <circle r="65" fill="none" stroke="#eef1f4"/>
+              <circle r="32.5" fill="none" stroke="#eef1f4"/>
+              <g stroke="#e0e5ea">
+                <line x1="0" y1="0" x2="0" y2="-130"/><line x1="0" y1="0" x2="91.9" y2="-91.9"/>
+                <line x1="0" y1="0" x2="130" y2="0"/><line x1="0" y1="0" x2="91.9" y2="91.9"/>
+                <line x1="0" y1="0" x2="0" y2="130"/><line x1="0" y1="0" x2="-91.9" y2="91.9"/>
+                <line x1="0" y1="0" x2="-130" y2="0"/><line x1="0" y1="0" x2="-91.9" y2="-91.9"/>
+              </g>
+              <!-- 5 year target: 8 everywhere -->
+              <polygon points="0,-104 73.5,-73.5 104,0 73.5,73.5 0,104 -73.5,73.5 -104,0 -73.5,-73.5"
+                       fill="none" stroke="#aab8c4" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <!-- 1 year: 5,4,7,5,6,5,6,6 -->
+              <polygon points="0,-65 36.8,-36.8 91,0 45.9,45.9 0,78 -45.9,45.9 -78,0 -55.1,-55.1"
+                       fill="none" stroke="#6b93b8" stroke-width="2"/>
+              <!-- now: 3,2,5,2,4,3,4,3 -->
+              <polygon points="0,-39 18.4,-18.4 65,0 18.4,18.4 0,52 -27.6,27.6 -52,0 -27.6,-27.6"
+                       fill="#1f4e79" fill-opacity=".14" stroke="#1f4e79" stroke-width="2"/>
+              <g font-family="-apple-system,Segoe UI,Arial" font-size="10" fill="#5b6674" text-anchor="middle">
+                <text x="0" y="-142">Health</text>
+                <text x="106" y="-104">Family</text>
+                <text x="150" y="4">Business</text>
+                <text x="104" y="112">Finance</text>
+                <text x="0" y="152">Growth</text>
+                <text x="-104" y="112">Fun</text>
+                <text x="-149" y="4">Spiritual</text>
+                <text x="-104" y="-104">Giving</text>
+              </g>
+            </g>
+          </svg>
+          <div class="legend">
+            <span><i style="border-color:#1f4e79"></i>Today</span>
+            <span><i style="border-color:#6b93b8"></i>One year</span>
+            <span><i style="border-color:#aab8c4;border-top-style:dashed"></i>Five years</span>
+          </div>
+        </div>
+
+        <div>
+          <table class="scoretbl">
+            <tr><th>Spoke</th><th>Today</th><th>1 yr</th><th>5 yr</th></tr>
+            <tr><td>Health</td><td><span class="num now">3</span></td><td><span class="num">5</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Family</td><td><span class="num now">2</span></td><td><span class="num">4</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Business</td><td><span class="num now">5</span></td><td><span class="num">7</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Personal Finance</td><td><span class="num now">2</span></td><td><span class="num">5</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Personal Growth</td><td><span class="num now">4</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Fun &amp; Hobby</td><td><span class="num now">3</span></td><td><span class="num">5</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Spiritual pursuits</td><td><span class="num now">4</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+            <tr><td>Giving back</td><td><span class="num now">3</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+          </table>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <span class="btn">Save this rating</span>
+            <span class="btn sec">Open a spoke</span>
+          </div>
+          <div style="font-family:var(--ui);font-size:11px;color:var(--note);margin-top:10px">Last rated 10 Sep 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">Life wheel — shown with Janagaran's ratings of 10 Sep 2026.</p>
+
+  <ol class="notes">
+    <li><b>Saving stores a dated rating, it does not overwrite.</b> Every rating is kept, which is what makes the year-on-year comparison possible later.</li>
+    <li>The eight spokes are the same for every member on every board, so the language stays shared. Anything specific to your business goes on the business wheel.</li>
+    <li>Re-rating is usually annual, but the screen allows it at any time — a spoke can move sooner than that.</li>
+    <li>Clicking a spoke on the wheel opens it. That is where the actual planning happens.</li>
+  </ol>
+</section>
+
+<!-- ================= SPOKE ================= -->
+<section class="screen" id="s-spoke">
+  <div class="head">
+    <div class="step">Setting up · step 3</div>
+    <h2>Inside one spoke</h2>
+    <p>A spoke holds focus areas. Each focus area names the issue today, where it should be in a year and in five, and then the action plans — each paired with the challenge standing in its way.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>Health</span><span class="who">Life wheel · 3 today, 5 in a year</span></div>
+    <div class="body stack">
+
+      <div style="border:1px solid var(--rule)">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--hair);background:#fafbfc">
+          <div class="lbl">Focus area</div>
+          <div style="font-family:var(--ui);font-size:14px;font-weight:600">Low immunity</div>
+          <div style="font-family:var(--ui);font-size:12px;color:var(--note);margin-top:5px">In a year — improved immunity and resistance &nbsp;·&nbsp; In five — the same, held as habit</div>
+        </div>
+        <table class="wf">
+          <tr><th style="width:52%">Action plan</th><th>What makes it hard</th><th style="width:74px">Status</th></tr>
+          <tr><td>Avoid hotel food, twice a month at most</td><td>Eating by mood rather than by plan</td><td><span class="chip">Active</span></td></tr>
+          <tr><td>Cut white sugar, move to low carb</td><td>Home cooking takes time I don't protect</td><td><span class="chip">Active</span></td></tr>
+          <tr><td>Take vitamins daily</td><td>—</td><td><span class="chip">Active</span></td></tr>
+          <tr><td colspan="3"><span class="link">Add an action plan</span></td></tr>
+        </table>
+      </div>
+
+      <div style="border:1px solid var(--rule)">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--hair);background:#fafbfc">
+          <div class="lbl">Focus area</div>
+          <div style="font-family:var(--ui);font-size:14px;font-weight:600">Low physical energy</div>
+          <div style="font-family:var(--ui);font-size:12px;color:var(--note);margin-top:5px">In a year — fitness as a daily habit &nbsp;·&nbsp; In five — habit plus diet held together</div>
+        </div>
+        <table class="wf">
+          <tr><th style="width:52%">Action plan</th><th>What makes it hard</th><th style="width:74px">Status</th></tr>
+          <tr><td>45 minutes at the gym</td><td>Laziness about going</td><td><span class="chip">Active</span></td></tr>
+          <tr><td>Walk 30 minutes a day</td><td>Sleep is short and broken</td><td><span class="chip">Active</span></td></tr>
+          <tr><td>Core work once a week</td><td>Body pain</td><td><span class="chip">Active</span></td></tr>
+        </table>
+      </div>
+
+      <div><span class="btn sec">Add a focus area</span></div>
+    </div>
+  </div>
+  <p class="cap">Spoke detail — Health, from the current wheel.</p>
+
+  <ol class="notes">
+    <li><b>Plan and challenge are one pair.</b> Every action plan has a place to say what is blocking it. In the spreadsheet the two drifted into separate lists and actions ended up filed as challenges.</li>
+    <li>Action plans are long-lived. They span many fortnights, and fortnightly tasks point at them.</li>
+    <li>An action plan can be closed or dropped without deleting it — the record of what was tried stays.</li>
+    <li>Whether a spoke has one focus area or four is up to the member. Business today has three; Giving back has two.</li>
+  </ol>
+</section>
+
+<!-- ================= WOB ================= -->
+<section class="screen" id="s-wob">
+  <div class="head">
+    <div class="step">Setting up · step 4</div>
+    <h2>Building the business wheel</h2>
+    <p>The business wheel starts empty. Every member builds the spokes that match their own business, then rates and plans them exactly as on the life wheel.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>Personal Board</span><span class="who">Janagaran · PB4</span></div>
+    <div class="tabs"><span>Life wheel</span><span class="sel">Business wheel</span><span>Tasks</span><span>Board</span></div>
+    <div class="body">
+      <div style="font-family:var(--ui);font-size:13px;color:var(--note);margin-bottom:14px">Your business wheel has no spokes yet. Name the functions you run, and rate each one.</div>
+      <table class="wf" style="border:1px solid var(--rule)">
+        <tr><th>Spoke</th><th style="width:80px">Today</th><th style="width:80px">1 yr</th><th style="width:80px">5 yr</th></tr>
+        <tr><td>Marketing</td><td><span class="num now">4</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>Sales</td><td><span class="num now">5</span></td><td><span class="num">7</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>Implementation</td><td><span class="num now">5</span></td><td><span class="num">7</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>Support</td><td><span class="num now">4</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>CSAT</td><td><span class="num now">3</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>R&amp;D</td><td><span class="num now">6</span></td><td><span class="num">7</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>Finance</td><td><span class="num now">4</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>HR</td><td><span class="num now">3</span></td><td><span class="num">6</span></td><td><span class="num">8</span></td></tr>
+        <tr><td>Management</td><td><span class="num now">5</span></td><td><span class="num">7</span></td><td><span class="num">8</span></td></tr>
+        <tr><td colspan="4"><span class="link">Add a spoke</span></td></tr>
+      </table>
+      <div style="margin-top:16px"><span class="btn">Save this rating</span></div>
+    </div>
+  </div>
+  <p class="cap">Business wheel — spokes shown are one member's; scores are illustrative.</p>
+
+  <ol class="notes">
+    <li><b>Every member's business wheel is different.</b> A manufacturer needs Production; a retailer needs Stock. Nobody is forced into someone else's functions.</li>
+    <li>Because the spokes differ, the board never compares business scores between members. It compares effort, not position.</li>
+    <li>The Business spoke on the life wheel stays a separate hand-made judgement. It is not the average of this wheel — how the business is doing and what it costs your life are two different questions.</li>
+    <li>Focus areas and action plans work here exactly as they do on the life wheel.</li>
+  </ol>
+</section>
+
+<!-- ================= TASKS ================= -->
+<section class="screen" id="s-tasks">
+  <div class="head">
+    <div class="step">Every day</div>
+    <h2>My tasks</h2>
+    <p>One list, however many boards you sit on. Open items sorted by the date you committed to. This is the screen you share when it is your turn to speak.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>Personal Board</span><span class="who">Janagaran</span></div>
+    <div class="tabs"><span>Life wheel</span><span>Business wheel</span><span class="sel">Tasks</span><span>Board</span></div>
+    <div class="body">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+        <span class="chip k">Open · 9</span><span class="chip">Life · 3</span><span class="chip">Business · 4</span><span class="chip">Open item · 2</span>
+        <span style="margin-left:auto"><span class="btn">Add a task</span></span>
+      </div>
+      <table class="wf" style="border:1px solid var(--rule)">
+        <tr><th style="width:34%">Task</th><th style="width:64px">Tag</th><th>Working toward</th><th style="width:88px">Target</th><th style="width:118px">Status</th></tr>
+        <tr><td>Walk 30 minutes, six days</td><td><span class="chip">Life</span></td><td style="color:var(--note)">Health → 30 minute walk</td><td>18 Sep</td><td><span class="chip">In progress</span></td></tr>
+        <tr><td>Draft the CSAT survey</td><td><span class="chip">Business</span></td><td style="color:var(--note)">CSAT → measure every close</td><td>18 Sep</td><td><span class="chip">Not started</span></td></tr>
+        <tr><td>Playbook for customer facing roles</td><td><span class="chip">Business</span></td><td style="color:var(--note)">HR → role clarity</td><td>25 Sep</td><td><span class="chip">In progress</span></td></tr>
+        <tr><td>Bank paperwork for the new office</td><td><span class="chip">Open item</span></td><td style="color:#b3bcc6">—</td><td>25 Sep</td><td><span class="chip">Not started</span></td></tr>
+        <tr><td>Finish the critical thinking book</td><td><span class="chip">Life</span></td><td style="color:var(--note)">Growth → one hour reading daily</td><td>30 Sep</td><td><span class="chip">In progress</span></td></tr>
+        <tr><td>Two vendor visits</td><td><span class="chip">Business</span></td><td style="color:var(--note)">Sales → five visits a month</td><td>30 Sep</td><td><span class="chip">On hold</span></td></tr>
+      </table>
+      <div style="font-family:var(--ui);font-size:12px;margin-top:14px"><span class="link">Show 14 completed and cancelled</span></div>
+    </div>
+  </div>
+  <p class="cap">Task list — open items only, earliest commitment first.</p>
+
+  <ol class="notes">
+    <li><b>Sorted by target date, which is the date you committed to.</b> The top of this list is what the board will ask about.</li>
+    <li>The fourth row carries no link and no wheel behind it. Real life produces work that belongs to no plan, and the list says so rather than hiding it.</li>
+    <li><b>The Open count is the honest measure.</b> If most tasks are Open items, the wheels are decorating your work rather than driving it. That is worth seeing.</li>
+    <li>Cancel is a real ending. A task that turned out not to matter is closed as cancelled, not left rotting or quietly deleted.</li>
+    <li>Tasks are never assigned by anyone else. Only you write your list.</li>
+  </ol>
+</section>
+
+<!-- ================= EDIT ================= -->
+<section class="screen" id="s-edit">
+  <div class="head">
+    <div class="step">Every day</div>
+    <h2>Adding a task</h2>
+    <p>Title and a target date are enough. Everything else is there when it earns its place.</p>
+  </div>
+
+  <div class="frame" style="max-width:470px">
+    <div class="chrome"><span class="dot"></span><span>New task</span></div>
+    <div class="body stack">
+      <div><div class="lbl">What are you doing</div><div class="fld">Draft the CSAT survey</div></div>
+      <div class="row">
+        <div><div class="lbl">Planning to start</div><div class="fld ghost">Optional</div></div>
+        <div><div class="lbl">Finish by</div><div class="fld">18 Sep 2026</div></div>
+      </div>
+      <div>
+        <div class="lbl">Tag</div>
+        <div style="display:flex;gap:6px"><span class="chip">Life</span><span class="chip k">Business</span><span class="chip">Open item</span><span class="chip">None</span></div>
+      </div>
+      <div>
+        <div class="lbl">Working toward</div>
+        <div class="fld">CSAT → measure satisfaction at every close</div>
+        <div style="font-family:var(--ui);font-size:11px;color:var(--note);margin-top:5px">Optional. You can link more than one, or none.</div>
+      </div>
+      <div><div class="lbl">Status</div><div class="fld">Not started</div></div>
+      <div class="row" style="margin-top:2px">
+        <div style="flex:0 0 auto"><span class="btn">Save task</span></div>
+        <div style="flex:0 0 auto"><span class="btn sec">Cancel</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">Task form.</p>
+
+  <ol class="notes">
+    <li><b>Two dates, two jobs.</b> Planning to start is for you alone. Finish by is the commitment, and it is the one the board sees you against.</li>
+    <li>Marking a task complete stamps the moment automatically. That timestamp is what the fortnightly count reads, so it cannot be back-dated by hand.</li>
+    <li>Notes can be added to a task over its life, so the story of a slipped item survives.</li>
+  </ol>
+</section>
+
+<!-- ================= BOARD ================= -->
+<section class="screen" id="s-board">
+  <div class="head">
+    <div class="step">Every 15 days</div>
+    <h2>Board dashboard</h2>
+    <p>Two numbers per member: finished since the last meeting, and open right now. Nothing else crosses between members.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>PB4</span><span class="who">Since 28 Aug · next meeting 11 Sep</span></div>
+    <div class="tabs"><span>Life wheel</span><span>Business wheel</span><span>Tasks</span><span class="sel">Board</span></div>
+    <div class="body">
+      <table class="wf" style="border:1px solid var(--rule)">
+        <tr><th>Member</th><th style="width:150px">Finished this fortnight</th><th style="width:110px">Open now</th></tr>
+        <tr><td>Arun</td><td><b style="font-size:15px">7</b></td><td>5</td></tr>
+        <tr><td>Gokul</td><td><b style="font-size:15px">6</b></td><td>11</td></tr>
+        <tr><td>Janagaran</td><td><b style="font-size:15px">4</b></td><td>9</td></tr>
+        <tr><td>Prakash Ji</td><td><b style="font-size:15px">4</b></td><td>6</td></tr>
+        <tr><td>Ramesh</td><td><b style="font-size:15px">3</b></td><td>8</td></tr>
+        <tr><td>Selvakumar</td><td><b style="font-size:15px">3</b></td><td>7</td></tr>
+        <tr><td>Vasant</td><td><b style="font-size:15px">2</b></td><td>12</td></tr>
+        <tr><td>Venkatesan</td><td><b style="font-size:15px">1</b></td><td>10</td></tr>
+      </table>
+      <div style="font-family:var(--ui);font-size:11px;color:var(--note);margin-top:12px">Counts only. Task titles stay private to each member.</div>
+    </div>
+  </div>
+  <p class="cap">Board dashboard — numbers illustrative.</p>
+
+  <ol class="notes">
+    <li><b>Counts and nothing more.</b> No titles, no tags, no dates, no plans. The pressure comes from the number, not from reading each other's lists.</li>
+    <li>The fortnight runs from the last meeting to this one. Boards meeting on different days will count different windows.</li>
+    <li>A member on two boards shows the same figure on both. Work is work, and it is not split by which board asked.</li>
+    <li>A high open count next to a low finished count is the conversation the board is there to have.</li>
+  </ol>
+
+  <div class="flag">
+    <h4>Worth discussing</h4>
+    <p>This table is the only thing any member sees about another. If the board wants more visible — say, which spoke someone is working on — that is a decision to take now, not later.</p>
+  </div>
+</section>
+
+<!-- ================= REVIEW ================= -->
+<section class="screen" id="s-review">
+  <div class="head">
+    <div class="step">Every 15 days</div>
+    <h2>The review call</h2>
+    <p>Alternate Thursdays on Zoom. Each member opens their own screen and shares it. The app holds the calendar; the meeting stays a meeting.</p>
+  </div>
+
+  <div class="frame" style="max-width:560px">
+    <div class="chrome"><span class="dot"></span><span>PB4 · meetings</span></div>
+    <div class="body">
+      <table class="wf">
+        <tr><th>Date</th><th>Status</th><th></th></tr>
+        <tr><td><b>Thu 11 Sep 2026</b>, 8:00 pm</td><td><span class="chip k">Next</span></td><td><span class="link">Notes</span></td></tr>
+        <tr><td>Thu 25 Sep 2026, 8:00 pm</td><td><span class="chip">Scheduled</span></td><td></td></tr>
+        <tr><td>Thu 9 Oct 2026, 8:00 pm</td><td><span class="chip">Scheduled</span></td><td></td></tr>
+        <tr><td>Thu 28 Aug 2026</td><td><span class="chip">Held</span></td><td><span class="link">Notes</span></td></tr>
+        <tr><td>Thu 14 Aug 2026</td><td><span class="chip">Held</span></td><td><span class="link">Notes</span></td></tr>
+      </table>
+      <div style="margin-top:14px;display:flex;gap:8px"><span class="btn sec">Add a meeting</span><span class="btn sec">Move this one</span></div>
+    </div>
+  </div>
+  <p class="cap">Meeting calendar — every other Thursday, movable when needed.</p>
+
+  <ol class="notes">
+    <li>Dates generate a fortnight ahead and can be moved for festivals, travel or anything else.</li>
+    <li>Moving a meeting moves the counting window with it, so the dashboard always matches the gap actually worked.</li>
+    <li>Notes against a meeting are for the board's own record — attendance, decisions, whatever the chairman wants to keep.</li>
+    <li>Nothing in the app runs the meeting. Members share their own screens; the app just makes sure everyone arrives with a current list.</li>
+  </ol>
+</section>
+
+<!-- ================= PROGRESS ================= -->
+<section class="screen" id="s-progress">
+  <div class="head">
+    <div class="step">Every 15 days · the point of it</div>
+    <h2>A year of scores</h2>
+    <p>Because every rating is kept with its date, the wheel can be laid over its earlier self. This is the thing a spreadsheet never gives you.</p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome"><span class="dot"></span><span>Life wheel · movement</span><span class="who">Sep 2026 → Sep 2027</span></div>
+    <div class="body">
+      <div style="display:flex;gap:34px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 300px">
+          <svg viewBox="0 0 300 300" width="100%" style="max-width:300px;display:block">
+            <g transform="translate(150,150)">
+              <circle r="115" fill="none" stroke="#e6eaef"/>
+              <circle r="86" fill="none" stroke="#eef1f4"/><circle r="57.5" fill="none" stroke="#eef1f4"/>
+              <g stroke="#e0e5ea">
+                <line x1="0" y1="0" x2="0" y2="-115"/><line x1="0" y1="0" x2="81.3" y2="-81.3"/>
+                <line x1="0" y1="0" x2="115" y2="0"/><line x1="0" y1="0" x2="81.3" y2="81.3"/>
+                <line x1="0" y1="0" x2="0" y2="115"/><line x1="0" y1="0" x2="-81.3" y2="81.3"/>
+                <line x1="0" y1="0" x2="-115" y2="0"/><line x1="0" y1="0" x2="-81.3" y2="-81.3"/>
+              </g>
+              <!-- Sep 2026: 3,2,5,2,4,3,4,3 -->
+              <polygon points="0,-34.5 16.3,-16.3 57.5,0 16.3,16.3 0,46 -24.4,24.4 -46,0 -24.4,-24.4"
+                       fill="none" stroke="#aab8c4" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <!-- Sep 2027: 5,4,6,4,6,5,6,5 -->
+              <polygon points="0,-57.5 32.5,-32.5 69,0 32.5,32.5 0,69 -40.7,40.7 -69,0 -40.7,-40.7"
+                       fill="#1f4e79" fill-opacity=".13" stroke="#1f4e79" stroke-width="2"/>
+              <g font-family="-apple-system,Segoe UI,Arial" font-size="9" fill="#5b6674" text-anchor="middle">
+                <text x="0" y="-126">Health</text><text x="94" y="-92">Family</text>
+                <text x="133" y="4">Business</text><text x="92" y="99">Finance</text>
+                <text x="0" y="135">Growth</text><text x="-92" y="99">Fun</text>
+                <text x="-132" y="4">Spiritual</text><text x="-92" y="-92">Giving</text>
+              </g>
+            </g>
+          </svg>
+          <div class="legend">
+            <span><i style="border-color:#aab8c4;border-top-style:dashed"></i>Sep 2026</span>
+            <span><i style="border-color:#1f4e79"></i>Sep 2027</span>
+          </div>
+        </div>
+        <div style="flex:1;min-width:230px">
+          <table class="scoretbl">
+            <tr><th>Spoke</th><th>2026</th><th>2027</th><th>Move</th></tr>
+            <tr><td>Health</td><td style="text-align:center">3</td><td style="text-align:center">5</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Family</td><td style="text-align:center">2</td><td style="text-align:center">4</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Business</td><td style="text-align:center">5</td><td style="text-align:center">6</td><td style="text-align:center;color:var(--deep)">+1</td></tr>
+            <tr><td>Personal Finance</td><td style="text-align:center">2</td><td style="text-align:center">4</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Personal Growth</td><td style="text-align:center">4</td><td style="text-align:center">6</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Fun &amp; Hobby</td><td style="text-align:center">3</td><td style="text-align:center">5</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Spiritual pursuits</td><td style="text-align:center">4</td><td style="text-align:center">6</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+            <tr><td>Giving back</td><td style="text-align:center">3</td><td style="text-align:center">5</td><td style="text-align:center;color:var(--deep)">+2</td></tr>
+          </table>
+          <div style="font-family:var(--ui);font-size:11px;color:var(--note);margin-top:10px">Illustrative — what a year of the practice could look like.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap">Wheel movement over one year.</p>
+
+  <ol class="notes">
+    <li><b>The wheel getting rounder is the outcome the practice is after.</b> Not a completion percentage — a shape.</li>
+    <li>This comes free once ratings are stored with dates. No extra work from any member.</li>
+    <li>Private, like everything else on the wheel. A member shares it if they want to.</li>
+  </ol>
+</section>
+
+<!-- ================= ADMIN ================= -->
+<section class="screen" id="s-admin">
+  <div class="head">
+    <div class="step">Behind it</div>
+    <h2>Creating boards</h2>
+    <p>Boards are created centrally and run independently. Any number of them, no data shared between.</p>
+  </div>
+
+  <div class="frame" style="max-width:640px">
+    <div class="chrome"><span class="dot"></span><span>Boards</span><span class="who">Superadmin</span></div>
+    <div class="body">
+      <table class="wf" style="border:1px solid var(--rule)">
+        <tr><th>Board</th><th style="width:80px">Members</th><th style="width:130px">Meets</th><th style="width:70px"></th></tr>
+        <tr><td><b>PB4</b></td><td>8</td><td>Alternate Thursdays</td><td><span class="link">Open</span></td></tr>
+        <tr><td>PB5</td><td>6</td><td>Alternate Tuesdays</td><td><span class="link">Open</span></td></tr>
+        <tr><td colspan="4"><span class="link">Create a board</span></td></tr>
+      </table>
+
+      <div style="margin-top:22px">
+        <div class="lbl">PB4 members</div>
+        <table class="wf" style="border:1px solid var(--rule)">
+          <tr><th>Name</th><th style="width:110px">Role</th><th style="width:90px">Status</th><th style="width:70px"></th></tr>
+          <tr><td>Janagaran</td><td><span class="chip k">Chairman</span></td><td>Active</td><td><span class="link">Edit</span></td></tr>
+          <tr><td>Selvakumar</td><td><span class="chip">Director</span></td><td>Active</td><td><span class="link">Edit</span></td></tr>
+          <tr><td>Ramesh</td><td><span class="chip">Director</span></td><td>Active</td><td><span class="link">Edit</span></td></tr>
+          <tr><td colspan="4"><span class="link">Invite by email</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="cap">Superadmin — boards and rosters.</p>
+
+  <ol class="notes">
+    <li>Boards are independent. Members, meetings and counts never cross between them.</li>
+    <li><b>The superadmin cannot read any member's wheels, plans or tasks.</b> The role creates boards and manages who is in them, nothing more.</li>
+    <li>One chairman per board. For now it is a title, with no extra sight of anyone's data — the chairman can keep the meeting calendar.</li>
+    <li>A member who leaves keeps everything. Their history moves with them to the next board.</li>
+  </ol>
+</section>
+
+<!-- ================= PRIVACY ================= -->
+<section class="screen" id="s-privacy">
+  <div class="head">
+    <div class="step">Behind it</div>
+    <h2>Who sees what</h2>
+    <p>The wheels hold health, money and family. The rule is simple, and it is enforced by the database rather than by the screens.</p>
+  </div>
+
+  <table class="wf" style="border:1px solid var(--rule);background:#fff;max-width:760px">
+    <tr><th style="width:38%">What</th><th>Who can see it</th></tr>
+    <tr><td>Name, photo, mobile</td><td>Everyone on the same board</td></tr>
+    <tr><td>Meeting calendar and notes</td><td>Everyone on that board</td></tr>
+    <tr><td>Finished and open counts</td><td>Everyone on that board — numbers only</td></tr>
+    <tr><td>Life wheel and its scores</td><td><b>Only you</b></td></tr>
+    <tr><td>Business wheel and its scores</td><td><b>Only you</b></td></tr>
+    <tr><td>Focus areas, plans, challenges</td><td><b>Only you</b></td></tr>
+    <tr><td>Tasks, titles, links, notes</td><td><b>Only you</b></td></tr>
+  </table>
+  <p class="cap">Visibility.</p>
+
+  <ol class="notes">
+    <li><b>Sharing happens by screen share, on purpose.</b> The member decides in the moment what the group sees, rather than the app deciding for them.</li>
+    <li>Chairman and superadmin get no exemption. Neither can open another member's wheel.</li>
+    <li>Nobody can edit anyone else's anything. There is no administrative override on a member's own record.</li>
+    <li>Honest self-rating depends on this. A Family score of 2 gets written down only if nobody can browse it unannounced.</li>
+  </ol>
+</section>
+
+<!-- ================= OPEN ================= -->
+<section class="screen" id="s-open">
+  <div class="head">
+    <div class="step">Behind it</div>
+    <h2>Open questions for the board</h2>
+    <p>Decisions worth taking together before anything gets built.</p>
+  </div>
+
+  <div class="flag ask">
+    <h4>Is counts-only enough on the dashboard?</h4>
+    <p>Today the board sees two numbers per member. Some boards would want to see which spoke someone is working on, without the task detail. Easy to add now, awkward later.</p>
+  </div>
+
+  <div class="flag ask">
+    <h4>Should the chairman be able to see anything more?</h4>
+    <p>At the moment the chairman keeps the calendar and sees exactly what every other member sees. If the role is meant to chase people between meetings, it may need more.</p>
+  </div>
+
+  <div class="flag ask">
+    <h4>Do the eight life spokes stay fixed forever?</h4>
+    <p>Fixed keeps a shared language across all boards. The cost is that a member who wants a ninth area of life has nowhere to put it except the business wheel.</p>
+  </div>
+
+  <div class="flag ask">
+    <h4>What does a score of 3 mean?</h4>
+    <p>Nothing in the app defines the scale. Ratings six months apart are only comparable if each member reads the numbers the same way each time. The board may want to agree rough anchors.</p>
+  </div>
+
+  <div class="flag ask">
+    <h4>How is a quiet spoke noticed?</h4>
+    <p>With eight life spokes and nine business ones, no fortnight touches them all. The app could show how long since a spoke last had a task against it, so nothing drifts for a year unnoticed.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+var links = document.querySelectorAll('.rail a');
+links.forEach(function(a){
+  a.addEventListener('click', function(){
+    links.forEach(function(x){ x.classList.remove('on'); });
+    a.classList.add('on');
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+    document.getElementById('s-' + a.dataset.s).classList.add('on');
+    window.scrollTo(0,0);
+  });
+});
+</script>
+</body>
+</html>

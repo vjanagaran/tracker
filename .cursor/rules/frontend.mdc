@@ -1,0 +1,79 @@
+---
+description: UI conventions, mobile behaviour and PWA rules
+globs: ["src/app/**", "src/components/**", "src/features/**", "src/sw.ts", "public/manifest.json"]
+---
+
+# Frontend
+
+## Stack
+
+Next.js 16 App Router · React 19 · Tailwind 4 (CSS-first config, no
+`tailwind.config.js`) · shadcn/ui · TanStack Query · react-hook-form + zod.
+
+Server components by default. `'use client'` only where interaction requires it,
+and as low in the tree as possible.
+
+**No chart library.** The wheel is a hand-rolled SVG radar. Eight to ten points
+with three overlaid polygons needs exact control, and a charting dependency
+costs more than it gives.
+
+**No global state library.** TanStack Query for server state, React state for
+the rest.
+
+## The radar component
+
+The signature element of the app. Requirements:
+
+- Accepts N axes, not a hardcoded eight — the business wheel varies per member.
+- Up to three polygons: today (filled, solid), one year (solid line), five years
+  (dashed). The comparison view instead overlays two dated cycles.
+- Renders from a `viewBox` and scales to its container. Never fixed pixel sizes.
+- A missing score is a gap, not a zero. Do not plot null as the centre.
+- Labels stay legible at 320px — shorten in the data, never clip in the render.
+- Accessible: a table of the same values is present for screen readers, visually
+  hidden if the design calls for it.
+
+Build it standalone against fixed data before wiring it to the database.
+
+## Mobile
+
+Mobile-first, and mobile is a real use case: members update tasks on a phone
+between meetings. Test every screen at 375px.
+
+- Bottom tab bar on mobile — Life, Business, Tasks, Board. Sidebar on desktop.
+- Touch targets 44px minimum.
+- Score entry is a stepper or a select, never a free-text number field. It is a
+  0–10 value and the keyboard is the wrong tool.
+- Tables become stacked rows below `md`. Never a horizontal scroll on a data
+  table the user needs to read.
+- The wheel goes full width above the score grid on mobile.
+
+## Screen-share legibility
+
+The task list is shared on a video call. Generous row height, no truncated task
+titles, no horizontal scroll at laptop width, and enough contrast to survive
+video compression.
+
+## PWA
+
+- `@serwist/next`, service worker at `src/sw.ts`, disabled in development.
+- **Precache the app shell and static assets only.** Never cache authenticated
+  Supabase responses or any route under `(app)`. A stale wheel is worse than a
+  spinner, and a cached response served to the wrong session is a privacy
+  breach — which is the one thing this product cannot afford.
+- Offline fallback states plainly what is unavailable and what still works.
+- `manifest.json`: name, short_name, 192 and 512 icons including maskable,
+  `display: standalone`.
+
+## Copy
+
+Sentence case. Plain verbs. No exclamation marks. A button names what happens
+and keeps the same word through the flow — "Save rating" produces "Rating
+saved". Empty states invite an action. Errors say what happened and what to do.
+Never apologise.
+
+## Accessibility
+
+Visible keyboard focus. Respect `prefers-reduced-motion`. Colour never the only
+carrier of meaning — the three wheel polygons differ by line style as well as
+hue. Target Lighthouse accessibility ≥ 95.
