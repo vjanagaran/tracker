@@ -15,13 +15,6 @@ import {
 import { inviteMemberSchema, resendInviteSchema } from "./schema";
 import type { InviteActionResult } from "./types";
 
-function chairmanTakenMessage(error: { message: string; code?: string }) {
-  if (error.code === "23505") {
-    return "This board already has a chairman. Change the current one first.";
-  }
-  return error.message;
-}
-
 export async function inviteMember(input: unknown): Promise<InviteActionResult> {
   const parsed = inviteMemberSchema.safeParse(input);
   if (!parsed.success) {
@@ -106,7 +99,7 @@ export async function inviteMember(input: unknown): Promise<InviteActionResult> 
       .eq("id", existing.id);
 
     if (error) {
-      return { error: chairmanTakenMessage(error) };
+      return { error: error.message };
     }
   } else {
     const { error } = await supabase.from("board_members").insert({
@@ -117,7 +110,7 @@ export async function inviteMember(input: unknown): Promise<InviteActionResult> 
     });
 
     if (error) {
-      return { error: chairmanTakenMessage(error) };
+      return { error: error.message };
     }
   }
 
