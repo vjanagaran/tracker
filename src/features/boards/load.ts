@@ -139,9 +139,28 @@ export async function loadBoardDashboard(
       velocity = (velocityRows ?? []).map((row) => ({
         userId: row.user_id,
         fullName: row.full_name,
+        photoUrl: null,
         completedCount: Number(row.completed_count),
         openCount: Number(row.open_count),
       }));
+
+      const memberIds = velocity.map((row) => row.userId);
+      if (memberIds.length > 0) {
+        const { data: photos, error: photoError } = await supabase
+          .from("profiles")
+          .select("id, photo_url")
+          .in("id", memberIds);
+
+        if (photoError) {
+          throw new Error(photoError.message);
+        }
+
+        const byId = new Map((photos ?? []).map((row) => [row.id, row.photo_url]));
+        velocity = velocity.map((row) => ({
+          ...row,
+          photoUrl: byId.get(row.userId) ?? null,
+        }));
+      }
     }
   }
 

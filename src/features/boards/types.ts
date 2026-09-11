@@ -12,6 +12,7 @@ export type MemberBoard = {
 export type VelocityRow = {
   userId: string;
   fullName: string;
+  photoUrl: string | null;
   completedCount: number;
   openCount: number;
 };

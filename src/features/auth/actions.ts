@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { resetPasswordUrl } from "@/lib/app-url";
 import {
   passwordResetRateLimitKey,
   passwordResetRateLimitedMessage,
@@ -16,15 +17,6 @@ import {
 } from "./schema";
 
 export type AuthActionResult = { error: string };
-
-function appOrigin(headerStore: Headers) {
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  if (!host) {
-    return null;
-  }
-  const proto = headerStore.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
-}
 
 export async function signIn(
   input: unknown,
@@ -74,7 +66,12 @@ export async function acceptInvite(
   });
 
   if (passwordError) {
-    return { error: passwordError.message };
+    const alreadySet =
+      passwordError.code === "same_password" ||
+      /different from the old password/i.test(passwordError.message);
+    if (!alreadySet) {
+      return { error: passwordError.message };
+    }
   }
 
   const { error: profileError } = await supabase
@@ -110,10 +107,9 @@ export async function requestPasswordReset(
   }
 
   const headerStore = await headers();
-  const origin = appOrigin(headerStore);
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: origin ? `${origin}/reset-password` : undefined,
+    redirectTo: resetPasswordUrl(headerStore),
   });
 
   if (error && /rate limit/i.test(error.message)) {

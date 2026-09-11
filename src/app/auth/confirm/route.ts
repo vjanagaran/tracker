@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
 
   if (tokenHash && type) {
     const supabase = await createClient();
+    if (type === "invite" || type === "recovery") {
+      await supabase.auth.signOut({ scope: "local" });
+    }
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash: tokenHash,

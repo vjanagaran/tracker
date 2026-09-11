@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { requireSuperadmin } from "@/lib/auth/require-superadmin";
+import { inviteAcceptUrl } from "@/lib/app-url";
 import type { Database } from "@/lib/database.types";
 import {
   inviteRateLimitKey,
@@ -13,15 +14,6 @@ import {
 } from "@/lib/rate-limit";
 import { inviteMemberSchema, resendInviteSchema } from "./schema";
 import type { InviteActionResult } from "./types";
-
-function appOrigin(headerStore: Headers) {
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  if (!host) {
-    return null;
-  }
-  const proto = headerStore.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
-}
 
 function chairmanTakenMessage(error: { message: string; code?: string }) {
   if (error.code === "23505") {
@@ -64,7 +56,6 @@ export async function inviteMember(input: unknown): Promise<InviteActionResult> 
   }
 
   const headerStore = await headers();
-  const origin = appOrigin(headerStore);
   const admin = createClient<Database>(url, secret, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -73,7 +64,7 @@ export async function inviteMember(input: unknown): Promise<InviteActionResult> 
     parsed.data.email,
     {
       data: { board_name: board.name },
-      redirectTo: origin ? `${origin}/invite/accept` : undefined,
+      redirectTo: inviteAcceptUrl(headerStore),
     },
   );
 
@@ -198,13 +189,12 @@ export async function resendInvite(input: unknown): Promise<InviteActionResult> 
   }
 
   const headerStore = await headers();
-  const origin = appOrigin(headerStore);
 
   const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(
     existingUser.user.email,
     {
       data: { board_name: board.name },
-      redirectTo: origin ? `${origin}/invite/accept` : undefined,
+      redirectTo: inviteAcceptUrl(headerStore),
     },
   );
 

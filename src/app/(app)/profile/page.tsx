@@ -43,6 +43,7 @@ export default async function ProfilePage() {
           phone: profile?.phone ?? "",
         }}
         initialPhotoUrl={profile?.photo_url ?? null}
+        email={user.email ?? ""}
       />
       <form action={signOut} className="mt-8">
         <Button type="submit" variant="outline" className="min-h-11 px-4">

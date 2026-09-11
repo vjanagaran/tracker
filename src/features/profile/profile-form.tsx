@@ -22,9 +22,10 @@ import {
 type ProfileFormProps = {
   defaultValues: ProfileInput;
   initialPhotoUrl: string | null;
+  email: string;
 };
 
-export function ProfileForm({ defaultValues, initialPhotoUrl }: ProfileFormProps) {
+export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
@@ -183,6 +184,16 @@ export function ProfileForm({ defaultValues, initialPhotoUrl }: ProfileFormProps
           {errors.fullName ? (
             <p className="text-sm text-destructive">{errors.fullName.message}</p>
           ) : null}
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            readOnly
+            className="min-h-11 bg-muted"
+          />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="phone">Phone</Label>

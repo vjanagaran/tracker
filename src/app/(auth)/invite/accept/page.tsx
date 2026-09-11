@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { AcceptInviteForm } from "@/features/auth/accept-invite-form";
 import { HashSessionCatcher } from "@/features/auth/hash-session";
+import { InviteSessionGate } from "@/features/auth/invite-session-gate";
+import { isInviteSetupSession } from "@/features/auth/invite-session";
 import { createClient } from "@/lib/supabase/server";
 
 type AcceptInvitePageProps = {
@@ -33,6 +35,7 @@ export default async function AcceptInvitePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
 
   let defaultName = "";
   let boardName = "";
@@ -53,22 +56,25 @@ export default async function AcceptInvitePage({
         : "";
   }
 
+  const setupSession = isInviteSetupSession(claimsData?.claims?.amr, boardName);
+
   return (
     <div className="pb-card p-6">
       <HashSessionCatcher />
+      {user && !setupSession ? <InviteSessionGate setupSession={setupSession} /> : null}
       <h1 className="mb-1 text-xl font-semibold tracking-tight">
         {boardName ? `You have been invited to ${boardName}` : "You have been invited"}
       </h1>
       <p className="mb-6 text-sm text-muted-foreground">
-        {user
+        {setupSession
           ? "Set a password and a short profile. Your life and business wheels are already in place."
           : "Open the invite link from your email to continue."}
       </p>
-      {user ? (
+      {setupSession && user ? (
         <AcceptInviteForm defaultName={defaultName} />
       ) : (
         <EmptyState>
-          The form stays closed until the invite link from the email is opened.
+          The form stays closed until the invite link from your email is opened.
         </EmptyState>
       )}
     </div>
