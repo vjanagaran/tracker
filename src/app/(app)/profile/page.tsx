@@ -41,8 +41,8 @@ export default async function ProfilePage() {
         defaultValues={{
           fullName: profile?.full_name ?? "",
           phone: profile?.phone ?? "",
-          photoUrl: profile?.photo_url ?? "",
         }}
+        initialPhotoUrl={profile?.photo_url ?? null}
       />
       <form action={signOut} className="mt-8">
         <Button type="submit" variant="outline" className="min-h-11 px-4">

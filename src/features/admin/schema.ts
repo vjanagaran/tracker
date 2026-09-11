@@ -33,7 +33,13 @@ export const inviteMemberSchema = z.object({
   role: z.enum(["chairman", "director"]),
 });
 
+export const resendInviteSchema = z.object({
+  boardId: z.string().uuid(),
+  membershipId: z.string().uuid(),
+});
+
 export type CreateBoardInput = z.infer<typeof createBoardSchema>;
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
 export type AddExistingMemberInput = z.infer<typeof addExistingMemberSchema>;
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+export type ResendInviteInput = z.infer<typeof resendInviteSchema>;

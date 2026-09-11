@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -12,7 +14,39 @@ import {
 } from "@/components/ui/select";
 import { roleLabel } from "@/features/boards/labels";
 import { updateMember } from "./actions";
+import { resendInvite } from "./invite-actions";
 import type { AdminMember } from "./types";
+
+function InvitationStatus({
+  member,
+  pending,
+  onResend,
+}: {
+  member: AdminMember;
+  pending: boolean;
+  onResend: (member: AdminMember) => void;
+}) {
+  if (member.inviteAccepted) {
+    return null;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge tone="warn" dot>
+        Invited, not yet accepted
+      </Badge>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="min-h-11 px-2 text-primary sm:min-h-7"
+        disabled={pending}
+        onClick={() => onResend(member)}
+      >
+        {pending ? "Resending" : "Resend invite"}
+      </Button>
+    </div>
+  );
+}
 
 export function RosterTable({
   boardId,
@@ -25,6 +59,19 @@ export function RosterTable({
   const [members, setMembers] = useState(initialMembers);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  async function resend(member: AdminMember) {
+    setResendingId(member.id);
+    setError(null);
+    const result = await resendInvite({ boardId, membershipId: member.id });
+    setResendingId(null);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    toast.success(result.message);
+  }
 
   async function save(
     member: AdminMember,
@@ -69,6 +116,7 @@ export function RosterTable({
               <th className="px-3 py-3">Name</th>
               <th className="w-[160px] px-3 py-3">Role</th>
               <th className="w-[140px] px-3 py-3">Status</th>
+              <th className="px-3 py-3">Invitation</th>
             </tr>
           </thead>
           <tbody>
@@ -118,6 +166,13 @@ export function RosterTable({
                       <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
+                </td>
+                <td className="px-3 py-3">
+                  <InvitationStatus
+                    member={member}
+                    pending={resendingId === member.id}
+                    onResend={(target) => void resend(target)}
+                  />
                 </td>
               </tr>
             ))}
@@ -169,6 +224,11 @@ export function RosterTable({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+              <InvitationStatus
+                member={member}
+                pending={resendingId === member.id}
+                onResend={(target) => void resend(target)}
+              />
             </div>
           </li>
         ))}

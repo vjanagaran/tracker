@@ -17,6 +17,7 @@ export type AdminMember = {
   status: Enums<"member_state">;
   joinedOn: string;
   leftOn: string | null;
+  inviteAccepted: boolean;
 };
 
 export type AdminBoardDetail = {

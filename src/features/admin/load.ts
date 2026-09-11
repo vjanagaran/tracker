@@ -4,12 +4,14 @@ import type { AdminBoard, AdminBoardDetail, AdminMember } from "./types";
 
 type Client = SupabaseClient<Database>;
 
-async function lookupEmails(ids: string[]): Promise<Map<string, string>> {
-  const emails = new Map<string, string>();
+type AuthInfo = { email: string; inviteAccepted: boolean };
+
+async function lookupAuthInfo(ids: string[]): Promise<Map<string, AuthInfo>> {
+  const info = new Map<string, AuthInfo>();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!url || !secret || ids.length === 0) {
-    return emails;
+    return info;
   }
 
   const admin = createClient<Database>(url, secret, {
@@ -19,13 +21,18 @@ async function lookupEmails(ids: string[]): Promise<Map<string, string>> {
   await Promise.all(
     ids.map(async (id) => {
       const { data } = await admin.auth.admin.getUserById(id);
-      if (data?.user?.email) {
-        emails.set(id, data.user.email);
+      if (data?.user) {
+        info.set(id, {
+          email: data.user.email ?? "",
+          // An invited user's email is unconfirmed until they follow the
+          // invite link. Anyone added a different way is confirmed already.
+          inviteAccepted: Boolean(data.user.confirmed_at ?? data.user.email_confirmed_at),
+        });
       }
     }),
   );
 
-  return emails;
+  return info;
 }
 
 export async function loadAdminBoards(supabase: Client): Promise<AdminBoard[]> {
@@ -91,6 +98,8 @@ export async function loadAdminBoard(
     throw new Error(memberError.message);
   }
 
+  const memberAuthInfo = await lookupAuthInfo((memberRows ?? []).map((row) => row.user_id));
+
   const members: AdminMember[] = (memberRows ?? []).map((row) => ({
     id: row.id,
     userId: row.user_id,
@@ -99,6 +108,7 @@ export async function loadAdminBoard(
     status: row.status,
     joinedOn: row.joined_on,
     leftOn: row.left_on,
+    inviteAccepted: memberAuthInfo.get(row.user_id)?.inviteAccepted ?? true,
   }));
 
   const onBoard = new Set(members.map((member) => member.userId));
@@ -112,7 +122,7 @@ export async function loadAdminBoard(
   }
 
   const availablePeople = (people ?? []).filter((person) => !onBoard.has(person.id));
-  const emails = await lookupEmails(availablePeople.map((person) => person.id));
+  const availableAuthInfo = await lookupAuthInfo(availablePeople.map((person) => person.id));
 
   return {
     board: {
@@ -126,7 +136,7 @@ export async function loadAdminBoard(
     availablePeople: availablePeople.map((person) => ({
       id: person.id,
       fullName: person.full_name,
-      email: emails.get(person.id) ?? "",
+      email: availableAuthInfo.get(person.id)?.email ?? "",
     })),
   };
 }
