@@ -1,0 +1,149 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requireSuperadmin } from "@/lib/auth/require-superadmin";
+import {
+  addExistingMemberSchema,
+  createBoardSchema,
+  updateMemberSchema,
+} from "./schema";
+
+export type AdminActionResult = { error: string } | { ok: true };
+
+function chairmanTakenMessage(error: { message: string; code?: string }) {
+  if (error.code === "23505") {
+    return "This board already has a chairman. Change the current one first.";
+  }
+  return error.message;
+}
+
+function refreshAdmin(boardId?: string) {
+  revalidatePath("/admin/boards");
+  if (boardId) {
+    revalidatePath(`/admin/boards/${boardId}`);
+    revalidatePath(`/boards/${boardId}`);
+  }
+  revalidatePath("/boards");
+}
+
+export async function createBoard(input: unknown): Promise<AdminActionResult> {
+  const parsed = createBoardSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Check the board and try again." };
+  }
+
+  const { supabase, user } = await requireSuperadmin();
+  const weekday =
+    parsed.data.meetingWeekday === "" ? null : parsed.data.meetingWeekday;
+
+  const { error } = await supabase.from("boards").insert({
+    name: parsed.data.name,
+    description: parsed.data.description ? parsed.data.description : null,
+    cadence_days: parsed.data.cadenceDays,
+    meeting_weekday: weekday,
+    created_by: user.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  refreshAdmin();
+  return { ok: true };
+}
+
+export async function updateMember(input: unknown): Promise<AdminActionResult> {
+  const parsed = updateMemberSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Check the member and try again." };
+  }
+
+  const { supabase } = await requireSuperadmin();
+  const leftOn =
+    parsed.data.status === "inactive"
+      ? new Date().toISOString().slice(0, 10)
+      : null;
+
+  const { error } = await supabase
+    .from("board_members")
+    .update({
+      role: parsed.data.role,
+      status: parsed.data.status,
+      left_on: leftOn,
+    })
+    .eq("id", parsed.data.membershipId)
+    .eq("board_id", parsed.data.boardId);
+
+  if (error) {
+    return { error: chairmanTakenMessage(error) };
+  }
+
+  refreshAdmin(parsed.data.boardId);
+  return { ok: true };
+}
+
+export async function addExistingMember(input: unknown): Promise<AdminActionResult> {
+  const parsed = addExistingMemberSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Choose a person and try again." };
+  }
+
+  const { supabase } = await requireSuperadmin();
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", parsed.data.profileId)
+    .maybeSingle();
+
+  if (profileError) {
+    return { error: profileError.message };
+  }
+  if (!profile) {
+    return { error: "That person could not be found." };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("board_members")
+    .select("id, status")
+    .eq("board_id", parsed.data.boardId)
+    .eq("user_id", profile.id)
+    .maybeSingle();
+
+  if (existingError) {
+    return { error: existingError.message };
+  }
+
+  if (existing?.status === "active") {
+    return { error: "That person is already on this board." };
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from("board_members")
+      .update({
+        role: parsed.data.role,
+        status: "active",
+        left_on: null,
+        joined_on: new Date().toISOString().slice(0, 10),
+      })
+      .eq("id", existing.id);
+
+    if (error) {
+      return { error: chairmanTakenMessage(error) };
+    }
+  } else {
+    const { error } = await supabase.from("board_members").insert({
+      board_id: parsed.data.boardId,
+      user_id: profile.id,
+      role: parsed.data.role,
+      status: "active",
+    });
+
+    if (error) {
+      return { error: chairmanTakenMessage(error) };
+    }
+  }
+
+  refreshAdmin(parsed.data.boardId);
+  return { ok: true };
+}
