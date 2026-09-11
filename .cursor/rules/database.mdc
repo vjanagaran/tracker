@@ -11,7 +11,8 @@ Live in `supabase/migrations/`, numbered, applied in order. Never edit an applie
 migration — add a new one. Regenerate types after any schema change:
 
 ```bash
-npx supabase gen types typescript --local > src/lib/database.types.ts
+npx supabase gen types typescript --linked > src/lib/database.types.ts
+# or --local if you are running the Supabase stack locally
 ```
 
 ## Row-level security
@@ -33,16 +34,18 @@ property if you touch them.
 
 - `src/lib/supabase/client.ts` — `createBrowserClient`, for client components.
 - `src/lib/supabase/server.ts` — `createServerClient`, async, reads `cookies()`.
-- Middleware refreshes the session. Follow the current `@supabase/ssr` guide
-  exactly, including the `getAll` / `setAll` cookie shape. Do not hand-roll
-  cookie handling.
+- `src/proxy.ts` refreshes the session (Next 16; there is no `middleware.ts`).
+  Follow the current `@supabase/ssr` guide exactly, including the `getAll` /
+  `setAll` cookie shape. Do not hand-roll cookie handling.
 
 ## The secret key
 
-`SUPABASE_SECRET_KEY` is used by exactly one thing: `inviteUserByEmail` in the
-invite server action. It must never be imported into a client component, a
-shared module that a client component can reach, or any file without
-`'use server'`. If you need an admin client, construct it inside the action.
+`SUPABASE_SECRET_KEY` is server-only. Current uses: `inviteUserByEmail` in the
+invite and resend-invite actions; `auth.admin.getUserById` in the admin roster
+loader; fixture setup in `scripts/rls-suite.ts`. It must never be imported into
+a client component or a shared module a client can reach. If you need an admin
+client, construct it inside the action or a server-only loader. Do not add
+another use without asking.
 
 ## Server actions
 

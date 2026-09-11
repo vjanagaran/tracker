@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,6 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { addSpoke, deleteSpoke, disableSpoke, enableSpoke, renameSpoke, reorderSpokes } from "./actions";
 import type { WheelSpoke } from "./types";
@@ -24,9 +31,11 @@ import type { WheelSpoke } from "./types";
 type SpokeManagerProps = {
   wheelId: string;
   spokes: WheelSpoke[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
-export function SpokeManager({ wheelId, spokes }: SpokeManagerProps) {
+export function SpokeManager({ wheelId, spokes, open, onOpenChange }: SpokeManagerProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -129,126 +138,171 @@ export function SpokeManager({ wheelId, spokes }: SpokeManagerProps) {
     move.mutate(next.map((spoke) => spoke.id));
   }
 
+  function saveName(spoke: WheelSpoke) {
+    const nextName = (drafts[spoke.id] ?? spoke.name).trim();
+    if (nextName && nextName !== spoke.name) {
+      rename.mutate({ spokeId: spoke.id, name: nextName });
+    }
+  }
+
   return (
-    <section className="mt-8 max-w-xl">
-      <h2 className="mb-3 text-sm font-medium">Spokes</h2>
-      <form
-        className="mb-4 flex flex-col gap-2 sm:flex-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          add.mutate();
-        }}
-      >
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Name a function you run"
-          className="min-h-11"
-          aria-label="New spoke name"
-        />
-        <Button type="submit" className="min-h-11 px-4" disabled={add.isPending || !name.trim()}>
-          <Plus className="size-4" aria-hidden="true" />
-          Add a spoke
-        </Button>
-      </form>
-      {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
-      <ul className="flex flex-col gap-2">
-        {active.map((spoke, index) => (
-          <li key={spoke.id} className="pb-card flex flex-col gap-2 p-2 sm:flex-row sm:items-center">
-            <Input
-              className="min-h-11"
-              aria-label={`Name for ${spoke.name}`}
-              value={drafts[spoke.id] ?? spoke.name}
-              onChange={(event) =>
-                setDrafts((current) => ({ ...current, [spoke.id]: event.target.value }))
-              }
-              onBlur={() => {
-                const nextName = (drafts[spoke.id] ?? spoke.name).trim();
-                if (nextName && nextName !== spoke.name) {
-                  rename.mutate({ spokeId: spoke.id, name: nextName });
-                }
-              }}
-            />
-            <div className="flex flex-wrap gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11 px-3"
-                disabled={index === 0}
-                onClick={() => shift(index, -1)}
-              >
-                Up
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11 px-3"
-                disabled={index === active.length - 1}
-                onClick={() => shift(index, 1)}
-              >
-                Down
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11 px-3"
-                onClick={() => disable.mutate(spoke.id)}
-              >
-                Disable
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 px-3"
-                onClick={() => setRemoveTarget(spoke)}
-              >
-                Remove
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {disabled.length > 0 ? (
-        <Collapsible className="mt-4">
-          <CollapsibleTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 gap-1.5 px-3 text-muted-foreground group"
-              />
-            }
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="max-h-[min(40rem,calc(100dvh-2rem))] sm:max-w-lg"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>Spokes</DialogTitle>
+            <DialogDescription>
+              Name the functions you run. Disable a spoke to keep old cycles readable.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              add.mutate();
+            }}
           >
-            Disabled spokes
-            <ChevronDown
-              className="size-4 transition-transform group-data-panel-open:rotate-180"
-              aria-hidden="true"
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Name a function you run"
+              className="min-h-11"
+              aria-label="New spoke name"
             />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 data-ending-style:h-0 data-starting-style:h-0">
-            <ul className="mt-2 flex flex-col gap-2">
-              {disabled.map((spoke) => (
-                <li key={spoke.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span>{spoke.name}</span>
+            <Button
+              type="submit"
+              className="min-h-11 shrink-0 px-3"
+              disabled={add.isPending || !name.trim()}
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              Add
+            </Button>
+          </form>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          {active.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No spokes yet. Add the first function above.
+            </p>
+          ) : (
+            <ul className="max-h-[min(20rem,50dvh)] overflow-y-auto">
+              {active.map((spoke, index) => (
+                <li
+                  key={spoke.id}
+                  className="flex items-center gap-1 border-b border-border py-1.5 last:border-b-0"
+                >
+                  <Input
+                    className="min-h-11 border-transparent bg-transparent px-2 shadow-none"
+                    aria-label={`Name for ${spoke.name}`}
+                    value={drafts[spoke.id] ?? spoke.name}
+                    onChange={(event) =>
+                      setDrafts((current) => ({
+                        ...current,
+                        [spoke.id]: event.target.value,
+                      }))
+                    }
+                    onBlur={() => saveName(spoke)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        (event.target as HTMLInputElement).blur();
+                      }
+                    }}
+                  />
                   <Button
                     type="button"
-                    variant="outline"
-                    className="min-h-11 px-3"
-                    onClick={() => enable.mutate(spoke.id)}
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 shrink-0"
+                    disabled={index === 0}
+                    aria-label={`Move ${spoke.name} up`}
+                    onClick={() => shift(index, -1)}
                   >
-                    Enable
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 shrink-0"
+                    disabled={index === active.length - 1}
+                    aria-label={`Move ${spoke.name} down`}
+                    onClick={() => shift(index, 1)}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 shrink-0 px-2 text-muted-foreground"
+                    onClick={() => disable.mutate(spoke.id)}
+                  >
+                    Disable
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 shrink-0 px-2 text-muted-foreground"
+                    onClick={() => setRemoveTarget(spoke)}
+                  >
+                    Remove
                   </Button>
                 </li>
               ))}
             </ul>
-          </CollapsibleContent>
-        </Collapsible>
-      ) : null}
+          )}
+
+          {disabled.length > 0 ? (
+            <Collapsible>
+              <CollapsibleTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 gap-1.5 px-2 text-muted-foreground group"
+                  />
+                }
+              >
+                Disabled spokes
+                <ChevronDown
+                  className="size-4 transition-transform group-data-panel-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-150 data-ending-style:h-0 data-starting-style:h-0">
+                <ul>
+                  {disabled.map((spoke) => (
+                    <li
+                      key={spoke.id}
+                      className="flex min-h-11 items-center justify-between gap-2 border-b border-border last:border-b-0"
+                    >
+                      <span className="text-sm">{spoke.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-11 px-3"
+                        onClick={() => enable.mutate(spoke.id)}
+                      >
+                        Enable
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={removeTarget != null}
-        onOpenChange={(open) => {
-          if (!open) {
+        onOpenChange={(openDialog) => {
+          if (!openDialog) {
             setRemoveTarget(null);
           }
         }}
@@ -278,6 +332,6 @@ export function SpokeManager({ wheelId, spokes }: SpokeManagerProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </>
   );
 }

@@ -21,10 +21,10 @@ export default async function AdminBoardsPage() {
           No boards yet. Create one to invite the first members.
         </p>
       ) : (
-        <div className="pb-card mb-6 overflow-hidden">
+        <div className="mb-6 overflow-hidden">
           <table className="hidden w-full border-collapse md:table">
             <thead>
-              <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+              <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                 <th className="px-3 py-3">Board</th>
                 <th className="w-[100px] px-3 py-3">Members</th>
                 <th className="w-[180px] px-3 py-3">Meets</th>

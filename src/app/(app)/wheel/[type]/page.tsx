@@ -50,6 +50,7 @@ export default async function WheelPage({ params, searchParams }: WheelPageProps
       wheelId={wheel.id}
       allSpokes={view.allSpokes}
       visibleSpokes={view.visibleSpokes}
+      sheetSpokes={view.sheetSpokes}
       cycles={view.cycles}
       selectedCycle={view.selectedCycle}
       scores={view.scores}

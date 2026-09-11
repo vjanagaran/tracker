@@ -28,9 +28,11 @@ export function SpokeDetailView({ spoke }: { spoke: SpokeDetail }) {
           {wheelLabel(spoke.wheelType)}
         </Link>
       </p>
-      <header className="mb-6 border-b border-border pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{spoke.name}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{scoreCaption(spoke)}</p>
+      <header className="mb-8">
+        <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
+          {spoke.name}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">{scoreCaption(spoke)}</p>
       </header>
 
       {spoke.focusAreas.length === 0 ? (

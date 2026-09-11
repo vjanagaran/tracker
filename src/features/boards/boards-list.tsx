@@ -12,12 +12,12 @@ export function BoardsList({ boards }: { boards: MemberBoard[] }) {
   }
 
   return (
-    <ul className="pb-card max-w-xl divide-y divide-border overflow-hidden">
+    <ul className="max-w-xl divide-y divide-border">
       {boards.map((board) => (
         <li key={board.id}>
           <Link
             href={`/boards/${board.id}`}
-            className="flex min-h-14 flex-col justify-center px-4 py-3 hover:bg-accent"
+            className="flex min-h-14 flex-col justify-center py-3 hover:bg-foreground/[0.025]"
           >
             <span className="text-sm font-medium">{board.name}</span>
             <span className="text-xs text-muted-foreground">

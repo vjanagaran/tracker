@@ -45,11 +45,13 @@ export default async function CyclesPage({ params, searchParams }: CyclesPagePro
 
   return (
     <div>
-      <header className="mb-6 border-b border-border pb-4">
+      <header className="mb-8">
         <p className="mb-1 text-xs text-muted-foreground">
           {config.label} · movement
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight">A year of scores</h1>
+        <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
+          A year of scores
+        </h1>
         <p className="mt-2 max-w-prose text-sm text-muted-foreground">
           Because every rating is kept with its date, the wheel can be laid over
           its earlier self.

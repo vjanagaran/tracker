@@ -11,7 +11,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-4">
         {appNav.map((item) => {
@@ -22,13 +22,13 @@ export function MobileTabBar() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs",
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px]",
                   active
-                    ? "font-medium text-primary"
+                    ? "font-medium text-foreground"
                     : "text-muted-foreground",
                 )}
               >
-                <item.icon className="size-5" aria-hidden="true" />
+                <item.icon className="size-5 opacity-80" aria-hidden="true" />
                 {item.label}
               </Link>
             </li>

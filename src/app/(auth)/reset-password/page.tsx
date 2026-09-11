@@ -37,9 +37,9 @@ export default async function ResetPasswordPage({
   const pendingHash = Boolean(params.token_hash) && !user && !linkError;
 
   return (
-    <div className="pb-card p-6">
+    <div>
       <HashSessionCatcher next="/reset-password" />
-      <h1 className="mb-1 text-xl font-semibold tracking-tight">Set a new password</h1>
+      <h1 className="mb-1 text-[1.75rem] font-semibold tracking-tight">Set a new password</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {user
           ? "Choose a new password for your account."

@@ -83,10 +83,10 @@ export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
 
   return (
     <section className="mb-10">
-      <div className="pb-card hidden overflow-hidden md:block">
+      <div className="hidden md:block">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+            <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
               <th className="px-3 py-3">Member</th>
               <th className="w-[180px] px-3 py-3">Finished this fortnight</th>
               <th className="w-[110px] px-3 py-3">Open now</th>
@@ -106,7 +106,7 @@ export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
         </table>
       </div>
 
-      <ul className="pb-card divide-y divide-border overflow-hidden md:hidden">
+      <ul className="divide-y divide-border md:hidden">
         {rows.map((row) => (
           <li key={row.userId} className="px-4 py-4">
             <MemberIdentity row={row} />

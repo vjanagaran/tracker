@@ -29,7 +29,7 @@ export function ScoreGrid({
       </p>
       <table className="hidden w-full border-collapse md:table">
         <thead>
-          <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+          <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
             <th className="py-2 pr-3 font-semibold">Spoke</th>
             <th className="py-2 px-2 text-center font-semibold">Today</th>
             <th className="py-2 px-2 text-center font-semibold">1 yr</th>
@@ -92,12 +92,12 @@ export function ScoreGrid({
         </tbody>
       </table>
 
-      <ul className="flex flex-col gap-4 md:hidden">
+      <ul className="divide-y divide-border md:hidden">
         {spokes.map((spoke) => {
           const score = scores[spoke.id] ?? emptyScore();
           const previous = previousScores[spoke.id] ?? emptyScore();
           return (
-            <li key={spoke.id} className="pb-card p-3">
+            <li key={spoke.id} className="py-4">
               <p className="mb-3 text-sm font-medium">
                 <Link
                   href={`/spoke/${spoke.id}`}

@@ -10,10 +10,12 @@ export function TaskNotes({
   taskId,
   notes,
   onAdded,
+  showHeading = true,
 }: {
   taskId: string;
   notes: TaskNote[];
   onAdded: (note: TaskNote) => void;
+  showHeading?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +38,8 @@ export function TaskNotes({
   }
 
   return (
-    <section className="mt-8 border-t border-border pt-6">
-      <h2 className="text-sm font-medium">Notes</h2>
+    <section className={showHeading ? "mt-8 border-t border-border pt-6" : undefined}>
+      {showHeading ? <h2 className="text-sm font-medium">Notes</h2> : null}
       {notes.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
           Notes stay with the task, so a slipped item keeps its story.
@@ -45,7 +47,7 @@ export function TaskNotes({
       ) : (
         <ul className="mt-3 flex flex-col gap-3">
           {notes.map((note) => (
-            <li key={note.id} className="pb-card px-3 py-3">
+            <li key={note.id} className="border-b border-border py-3 last:border-b-0">
               <p className="text-sm break-words whitespace-pre-wrap">{note.note}</p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {formatNoteTime(note.createdAt)}

@@ -24,7 +24,7 @@ export function MovementTable({
           Score movement from {earlierLabel} to {laterLabel}
         </caption>
         <thead>
-          <tr className="border-b border-border text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+          <tr className="border-b border-border text-xs font-medium text-muted-foreground">
             <th className="py-2 pr-3 text-left font-semibold">Spoke</th>
             <th className="px-2 py-2 text-center font-semibold">{earlierLabel}</th>
             <th className="px-2 py-2 text-center font-semibold">{laterLabel}</th>

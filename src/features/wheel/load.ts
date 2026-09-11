@@ -5,6 +5,8 @@ import type {
   CycleComparison,
   ScoreTriple,
   WheelCycle,
+  WheelSheetFocus,
+  WheelSheetSpoke,
   WheelSpoke,
 } from "./types";
 
@@ -112,14 +114,80 @@ export async function loadWheelWorkspace(
     return viewingPast && scoredSpokeIds.has(spoke.id);
   });
 
+  const sheetSpokes = await loadSheetSpokes(supabase, visibleSpokes);
+
   return {
     allSpokes,
     visibleSpokes,
+    sheetSpokes,
     cycles,
     selectedCycle,
     scores,
     previousScores,
   };
+}
+
+async function loadSheetSpokes(
+  supabase: Client,
+  spokes: WheelSpoke[],
+): Promise<WheelSheetSpoke[]> {
+  if (spokes.length === 0) {
+    return [];
+  }
+
+  const spokeIds = spokes.map((spoke) => spoke.id);
+  const { data: focusRows, error: focusError } = await supabase
+    .from("focus_areas")
+    .select("id, spoke_id, current_issue, goal_1y, goal_5y, sort_order")
+    .in("spoke_id", spokeIds)
+    .order("sort_order", { ascending: true });
+
+  if (focusError) {
+    throw new Error(focusError.message);
+  }
+
+  const focusIds = (focusRows ?? []).map((row) => row.id);
+  const plansByFocus = new Map<string, WheelSheetFocus["plans"]>();
+
+  if (focusIds.length > 0) {
+    const { data: planRows, error: planError } = await supabase
+      .from("action_plans")
+      .select("id, focus_area_id, description, challenge, sort_order")
+      .in("focus_area_id", focusIds)
+      .order("sort_order", { ascending: true });
+
+    if (planError) {
+      throw new Error(planError.message);
+    }
+
+    for (const row of planRows ?? []) {
+      const list = plansByFocus.get(row.focus_area_id) ?? [];
+      list.push({
+        id: row.id,
+        description: row.description,
+        challenge: row.challenge,
+      });
+      plansByFocus.set(row.focus_area_id, list);
+    }
+  }
+
+  const focusBySpoke = new Map<string, WheelSheetFocus[]>();
+  for (const row of focusRows ?? []) {
+    const list = focusBySpoke.get(row.spoke_id) ?? [];
+    list.push({
+      id: row.id,
+      currentIssue: row.current_issue,
+      goal1y: row.goal_1y,
+      goal5y: row.goal_5y,
+      plans: plansByFocus.get(row.id) ?? [],
+    });
+    focusBySpoke.set(row.spoke_id, list);
+  }
+
+  return spokes.map((spoke) => ({
+    ...spoke,
+    focusAreas: focusBySpoke.get(spoke.id) ?? [],
+  }));
 }
 
 export function resolveCyclePair(

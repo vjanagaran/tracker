@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,10 +51,10 @@
 }
 
 :root {
-  /* Warm-minimal palette, Todoist-disciplined: one warm ink at varying
-     roles, one accent (our existing deep blue — kept because it is the
-     wheel's "today" color), functional-only status colors. */
-  --background: #f7f4ef;
+  /* Warm-minimal, Todoist-disciplined: one warm ink, one accent (our
+     navy — the wheel's "today" colour), hierarchy from opacity and
+     space rather than boxes and shadows. */
+  --background: #fefdfc;
   --foreground: #25221e;
   --card: #ffffff;
   --card-foreground: #25221e;
@@ -62,17 +62,16 @@
   --popover-foreground: #25221e;
   --primary: #1f4e79;
   --primary-foreground: #ffffff;
-  --secondary: #ece4d8;
+  --secondary: #f4f1ec;
   --secondary-foreground: #25221e;
-  --muted: #f1ebe3;
-  --muted-foreground: #6b6357;
-  --accent: #eaf1f8;
-  --accent-foreground: #1f4e79;
+  --muted: #f7f5f2;
+  --muted-foreground: #6e6b68;
+  --accent: #fff3ea;
+  --accent-foreground: #25221e;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #dad1c4;
-  --input: #dad1c4;
+  --border: rgb(37 34 30 / 10%);
+  --input: rgb(37 34 30 / 14%);
   --ring: #1f4e79;
-  /* Functional only — never used as a brand accent. */
   --status-positive: #3f7a4e;
   --status-warn: #8f6420;
   --chart-1: oklch(0.87 0 0);
@@ -81,13 +80,13 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #4a4438;
+  --sidebar: #fefdfc;
+  --sidebar-foreground: #5c5854;
   --sidebar-primary: #1f4e79;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eaf1f8;
-  --sidebar-accent-foreground: #1f4e79;
-  --sidebar-border: #dad1c4;
+  --sidebar-accent: #fff3ea;
+  --sidebar-accent-foreground: #25221e;
+  --sidebar-border: rgb(37 34 30 / 8%);
   --sidebar-ring: #1f4e79;
 }
 
@@ -136,15 +135,15 @@
     color-scheme: light;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+  tbody tr {
+    @apply transition-colors hover:bg-foreground/[0.025];
   }
 }
 
 @layer components {
-  /* Whisper-quiet elevation: a hairline border plus a barely-there
-     shadow, never a heavy panel. Used on every card-like container. */
   .pb-card {
-    @apply rounded-lg border border-border bg-card;
-    box-shadow: 0 1px 2px rgba(37, 34, 30, 0.04);
+    @apply rounded-xl border border-border bg-card;
   }
 }

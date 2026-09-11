@@ -3,8 +3,9 @@
 Working name: **PB**. A peer-accountability platform for entrepreneur boards that
 run the Wheel of Life / Wheel of Business practice on a fortnightly review cycle.
 
-This document is the single source of truth for the build. Read it fully before
-writing code. `docs/BUILD_PLAN.md` has the phased task list.
+This document is the single source of truth for the product. Read it fully
+before writing code. `docs/BUILD_PLAN.md` has the phased task list and current
+build status.
 
 ---
 
@@ -67,7 +68,7 @@ Migrations are in `supabase/migrations/`. Read them before touching the schema.
 profiles          one per auth user; the only shared personal data
 boards            tenant. name, cadence_days, meeting_weekday
 board_members     roster. role, status, joined_on, left_on
-meetings          calendar per board
+meetings          calendar per board; agenda (planned topics) and notes
 
 wheels            (user_id, type WOL|WOB) — one of each per person
 spokes            name, sort_order, is_predefined, is_active
@@ -81,6 +82,11 @@ tasks             title, tag, status, planned_start_on, target_on, completed_on
 task_action_plans many-to-many, optional
 task_notes        append-only
 ```
+
+Avatars live in a private `avatars` storage bucket, not in a table. Profile
+`photo_url` points at the object. Member photos may appear on the board
+velocity table because `profiles` is shared board data; they never come from
+`board_velocity`.
 
 ### Rules the database enforces, not the UI
 
@@ -121,31 +127,21 @@ sign off on a target they never reconsidered.
 
 ## 4. Stack
 
-Versions verified against npm on 10 Sep 2026. Install with `@latest` and let the
-lockfile record the real numbers.
+The app is already scaffolded. Versions below are what `package.json` records;
+the lockfile is authoritative. See `README.md` for setup.
 
-| Package | Verified | Role |
+| Package | Installed | Role |
 |---|---|---|
 | `next` | 16.3.4 | App Router, server actions, Turbopack |
 | `react` / `react-dom` | 19.2.8 | — |
-| `tailwindcss` | 4.3.3 | CSS-first config, no `tailwind.config.js` |
-| `@supabase/supabase-js` | 2.85.x | — |
-| `@supabase/ssr` | 0.12.5 | Cookie-based sessions |
-| `@tanstack/react-query` | latest | Server state |
-| `react-hook-form` + `zod` | latest | Forms and validation |
-| `@serwist/next` + `serwist` | latest | PWA service worker |
-| `date-fns` | latest | Dates |
-| `shadcn/ui` | latest | Components (Radix under the hood) |
-
-```bash
-npx create-next-app@latest pb-app --typescript --app --tailwind --eslint --src-dir
-cd pb-app
-npm i @supabase/supabase-js@latest @supabase/ssr@latest \
-      @tanstack/react-query@latest react-hook-form@latest zod@latest \
-      @hookform/resolvers@latest date-fns@latest
-npm i -D @serwist/next@latest serwist@latest supabase@latest
-npx shadcn@latest init
-```
+| `tailwindcss` | 4.x | CSS-first config, no `tailwind.config.js` |
+| `@supabase/supabase-js` | 2.116.x | — |
+| `@supabase/ssr` | 0.12.7 | Cookie-based sessions |
+| `@tanstack/react-query` | 5.x | Server state |
+| `react-hook-form` + `zod` | 7.x / 4.x | Forms and validation |
+| `@serwist/next` + `serwist` | 9.x | PWA service worker |
+| `date-fns` | 4.x | Dates |
+| `shadcn/ui` | 4.x | Components |
 
 **No chart library.** The wheel is eight points on a radar — hand-rolled SVG.
 A charting dependency costs more than it gives here, and the wheel needs exact
@@ -154,20 +150,28 @@ control over the three overlaid polygons.
 **No global state library.** TanStack Query for server state, React state for
 the rest. Nothing in this app needs Zustand or Redux.
 
-Enable the React Compiler in `next.config.ts` (`reactCompiler: true`) — stable
-as of Next 16 — and install `babel-plugin-react-compiler` as a dev dependency.
+React Compiler is on in `next.config.ts` (`reactCompiler: true`).
 
 ### Environment
 
+Copy `.env.example` to `.env`. Next also reads `.env.local` if present.
+
 ```
+NEXT_PUBLIC_APP_URL=              # public origin; invite and reset emails
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=              # server only. NEVER expose to the client
 ```
 
-The secret key is used by exactly one thing: `inviteUserByEmail` in the invite
-server action. If it appears anywhere reachable from a client component, that is
-a bug.
+`SUPABASE_SECRET_KEY` stays on the server. Current uses:
+
+- `inviteUserByEmail` in the invite and resend-invite actions
+- `auth.admin.getUserById` in the admin roster loader (email and whether
+  the invite was accepted)
+- `scripts/rls-suite.ts` for test fixtures
+
+If it appears anywhere reachable from a client component, that is a bug. Do not
+add a fourth use without asking.
 
 ---
 
@@ -178,8 +182,11 @@ app/
   (auth)/
     sign-in/page.tsx
     invite/accept/page.tsx
+    forgot-password/page.tsx
+    reset-password/page.tsx
   (app)/
     layout.tsx                  shell: sidebar on desktop, bottom tabs on mobile
+    profile/page.tsx            name, phone, photo, sign out
     wheel/
       [type]/page.tsx           type = life | business — wheel + score table
       [type]/cycles/page.tsx    cycle list, new cycle, compare two
@@ -188,13 +195,18 @@ app/
     boards/page.tsx             boards this member belongs to
     boards/[boardId]/page.tsx   counts dashboard + meeting calendar
   (admin)/
-    admin/boards/page.tsx       superadmin: boards and rosters
-  api/                          only if something genuinely needs a route handler
+    admin/boards/page.tsx       superadmin: boards
+    admin/boards/[boardId]/page.tsx  roster, invite, add existing member
+  auth/confirm/route.ts         invite and recovery OTP
+  auth/callback/route.ts        PKCE code exchange
+  offline/page.tsx              PWA fallback
+  radar/page.tsx                hardcoded radar preview; no auth
 ```
 
-Server components read data by default. Mutations go through server actions.
-TanStack Query is for client-side interactive views — chiefly the task list and
-the score grid, where optimistic updates matter.
+There is no `app/api/` tree. Server components read data by default. Mutations
+go through server actions. TanStack Query is for client-side interactive views
+— chiefly the task list and the score grid, where optimistic updates matter.
+`/radar` is a development preview with wireframe scores, not a member screen.
 
 ---
 
@@ -230,7 +242,11 @@ row height, no truncation of task titles, no horizontal scroll on a laptop.
 
 ### Board (`/boards/[boardId]`)
 The counts table from `board_velocity`, plus the meeting calendar. Window
-defaults to the last meeting → the next one, via `meeting_window`.
+defaults to the last meeting → the next one, via `meeting_window`. The chairman
+adds and moves meetings and edits the agenda.
+
+### Profile (`/profile`)
+Name, phone, photo. Sign out lives here.
 
 ### Cycles (`/wheel/[type]/cycles`)
 List of cycles, latest first. Select any two to overlay. Open a past cycle to
@@ -243,8 +259,9 @@ edit it.
 Installable, offline-tolerant, mobile-first. Members will update tasks on a
 phone between meetings and share a laptop screen during them.
 
-- `public/manifest.json` — name, short_name, icons at 192/512 (maskable
-  included), `display: standalone`, theme colour matching the shell.
+- `public/manifest.json` — name **Personal Board**, short_name **PB**, icons at
+  192/512 (maskable included), `display: standalone`, theme colour matching the
+  shell. The icon PNG files themselves are still outstanding.
 - `src/sw.ts` with `@serwist/next`, disabled in development.
 - **Cache the app shell and static assets only.** Never cache authenticated
   Supabase responses or any route under `(app)`. A stale wheel or a stale task
@@ -252,21 +269,23 @@ phone between meetings and share a laptop screen during them.
   session is a privacy breach.
 - Offline fallback page that states plainly what is unavailable and what still
   works.
-- Touch targets 44px minimum. Bottom tab bar on mobile: Life · Business · Tasks
+- Touch targets 44px minimum. Bottom tab bar on mobile: Tasks · Life · Business
   · Board. Sidebar on desktop.
-- Score entry on mobile uses a stepper or a select, never a free-text number
-  field — it is a 0–10 value and the keyboard is the wrong tool.
+- Score entry uses a stepper, never a free-text number field — it is a 0–10
+  value and the keyboard is the wrong tool.
 
 ---
 
 ## 8. Conventions
 
-- TypeScript strict. No `any`. Database types generated:
-  `npx supabase gen types typescript --local > src/lib/database.types.ts`
+- TypeScript strict. No `any`. Database types generated from the linked
+  project (`--linked`) or a local stack (`--local`):
+  `npx supabase gen types typescript --linked > src/lib/database.types.ts`
 - Two Supabase clients: `src/lib/supabase/client.ts` (browser) and
   `src/lib/supabase/server.ts` (server, async, reads `cookies()`).
-  Middleware refreshes the session — follow the current `@supabase/ssr` guide
-  exactly, including the `getAll` / `setAll` cookie shape.
+  `src/proxy.ts` refreshes the session (Next 16; there is no `middleware.ts`).
+  Follow the current `@supabase/ssr` guide exactly, including the `getAll` /
+  `setAll` cookie shape.
 - Server actions live beside the feature, named `actions.ts`, and always
   re-validate input with zod. Never trust a client-supplied `user_id`; take it
   from the session.
@@ -294,6 +313,9 @@ Do not add these without asking. Each was considered and rejected.
 ## 10. Open items
 
 - Confirm the exact WOB spoke list per founding member during onboarding.
-- Icon set and app name for the manifest.
-- Whether the chairman keeps meeting-calendar write access — the RLS policy is
-  written with it and commented so it can be removed in one line.
+- Icon artwork for the manifest (name is Personal Board / PB). Files belong at
+  `public/icons/` as named in `public/manifest.json`.
+- Whether `/radar` stays a public preview once members are on the app.
+
+Chairman calendar write access is decided: the chairman keeps it. The RLS
+policy is still commented so it can be removed in one line if that changes.

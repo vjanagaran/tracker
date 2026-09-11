@@ -13,8 +13,8 @@ export function CycleMovement({ wheelLabel, comparison }: CycleMovementProps) {
   const laterLabel = formatPeriod(comparison.later.period);
 
   return (
-    <section className="pb-card mb-10">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+    <section className="mb-10">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>
           {wheelLabel} · movement
         </span>
@@ -22,7 +22,7 @@ export function CycleMovement({ wheelLabel, comparison }: CycleMovementProps) {
           {earlierLabel} → {laterLabel}
         </span>
       </div>
-      <div className="flex flex-col gap-8 p-5 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         <div className="w-full lg:max-w-[360px] lg:flex-none">
           <ComparisonRadar
             axes={comparison.axes}

@@ -40,10 +40,10 @@ export function MeetingCalendar({
         </p>
       ) : (
         <>
-          <div className="pb-card mb-4 hidden overflow-hidden md:block">
+          <div className="mb-4 hidden md:block">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
                   <th className="px-3 py-3">Date</th>
                   <th className="w-[120px] px-3 py-3">Status</th>
                   <th className="px-3 py-3">Agenda</th>
@@ -104,7 +104,7 @@ export function MeetingCalendar({
             </table>
           </div>
 
-          <ul className="pb-card mb-4 divide-y divide-border md:hidden">
+          <ul className="mb-4 divide-y divide-border md:hidden">
             {meetings.map((meeting) => {
               const tone = meetingTone(meeting, next);
               const selected = meeting.id === selectedMeetingId;

@@ -20,6 +20,14 @@ costs more than it gives.
 **No global state library.** TanStack Query for server state, React state for
 the rest.
 
+## Visual voice
+
+Calm like a paper planner, not an admin console. Warm off-white canvas
+(`#fefdfc`), warm ink (`#25221e`) at varying opacity, Inter, and our navy as
+the only accent. Hierarchy comes from type and space. No drop shadows, no
+uppercase table headers, no boxed data tables. Lists are hairline rows. The
+active nav is a warm peach wash with ink text, not a blue fill.
+
 ## The radar component
 
 The signature element of the app. Requirements:
@@ -33,14 +41,14 @@ The signature element of the app. Requirements:
 - Accessible: a table of the same values is present for screen readers, visually
   hidden if the design calls for it.
 
-Build it standalone against fixed data before wiring it to the database.
+`/radar` is the standalone preview against hardcoded wireframe scores.
 
 ## Mobile
 
 Mobile-first, and mobile is a real use case: members update tasks on a phone
 between meetings. Test every screen at 375px.
 
-- Bottom tab bar on mobile — Life, Business, Tasks, Board. Sidebar on desktop.
+- Bottom tab bar on mobile — Tasks, Life, Business, Board. Sidebar on desktop.
 - Touch targets 44px minimum.
 - Score entry is a stepper or a select, never a free-text number field. It is a
   0–10 value and the keyboard is the wrong tool.

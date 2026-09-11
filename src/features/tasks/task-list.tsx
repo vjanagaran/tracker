@@ -1,7 +1,7 @@
 "use client";
 
-import { Calendar, Plus } from "lucide-react";
-import { Badge, Dot, type BadgeTone } from "@/components/ui/badge";
+import { Calendar, Plus, StickyNote } from "lucide-react";
+import { Dot, type BadgeTone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -36,6 +36,7 @@ type TaskListProps = {
   statusError: string | null;
   onAdd: () => void;
   onEdit: (taskId: string) => void;
+  onNotes: (taskId: string) => void;
   onStatus: (taskId: string, status: TaskStatus) => void;
   onToggleClosed: () => void;
 };
@@ -47,6 +48,7 @@ export function TaskList({
   statusError,
   onAdd,
   onEdit,
+  onNotes,
   onStatus,
   onToggleClosed,
 }: TaskListProps) {
@@ -56,12 +58,14 @@ export function TaskList({
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <Badge tone="accent">Open · {counts.open}</Badge>
-        <Badge>Life · {counts.life}</Badge>
-        <Badge>Business · {counts.business}</Badge>
-        <Badge>Open item · {counts.openItem}</Badge>
-        <Button type="button" className="min-h-11 px-4 md:ml-auto" onClick={onAdd}>
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {counts.open} open
+          {counts.life || counts.business || counts.openItem
+            ? ` · ${counts.life} life · ${counts.business} business · ${counts.openItem} untagged`
+            : null}
+        </p>
+        <Button type="button" variant="ghost" className="min-h-11 px-3" onClick={onAdd}>
           <Plus className="size-4" aria-hidden="true" />
           Add a task
         </Button>
@@ -72,93 +76,36 @@ export function TaskList({
           No open tasks. Add one when you have something to finish this fortnight.
         </p>
       ) : (
-        <>
-          <div className="pb-card hidden overflow-hidden md:block">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                  <th className="w-[34%] px-3 py-3">Task</th>
-                  <th className="w-[110px] px-3 py-3">Tag</th>
-                  <th className="px-3 py-3">Working toward</th>
-                  <th className="w-[88px] px-3 py-3">Target</th>
-                  <th className="w-[168px] px-3 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {open.map((task) => (
-                  <tr key={task.id} className="border-b border-border last:border-b-0">
-                    <td className="px-3 py-4 align-middle">
-                      <button
-                        type="button"
-                        className="min-h-11 text-left text-base break-words whitespace-normal"
-                        onClick={() => onEdit(task.id)}
-                      >
-                        {task.title}
-                      </button>
-                    </td>
-                    <td className="px-3 py-4 align-middle text-sm text-muted-foreground">
-                      {tagLabel(task.tag)}
-                    </td>
-                    <td className="px-3 py-4 align-middle text-sm break-words text-muted-foreground">
-                      {workingToward(task, plans)}
-                    </td>
-                    <td className="px-3 py-4 align-middle text-sm whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Calendar className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                        {formatTarget(task.targetOn)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-4 align-middle">
-                      <StatusSelect
-                        title={task.title}
-                        value={task.status}
-                        onChange={(status) => onStatus(task.id, status)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <ul className="flex flex-col gap-4 md:hidden">
-            {open.map((task) => (
-              <li key={task.id} className="pb-card p-3">
-                <button
-                  type="button"
-                  className="min-h-11 w-full text-left text-base break-words whitespace-normal"
-                  onClick={() => onEdit(task.id)}
-                >
-                  {task.title}
-                </button>
-                <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                  {tagLabel(task.tag)} ·
-                  <Calendar className="size-3.5" aria-hidden="true" />
-                  {formatTarget(task.targetOn)}
-                </p>
-                <p className="mt-1 text-sm break-words text-muted-foreground">
-                  {workingToward(task, plans)}
-                </p>
-                <div className="mt-3">
-                  <StatusSelect
-                    title={task.title}
-                    value={task.status}
-                    onChange={(status) => onStatus(task.id, status)}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul>
+          {open.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              plans={plans}
+              onEdit={onEdit}
+              onNotes={onNotes}
+              onStatus={onStatus}
+            />
+          ))}
+        </ul>
       )}
+
+      <button
+        type="button"
+        className="mt-1 flex min-h-11 w-full items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        onClick={onAdd}
+      >
+        <Plus className="size-4" aria-hidden="true" />
+        Add a task
+      </button>
 
       {statusError ? <p className="mt-4 text-sm text-destructive">{statusError}</p> : null}
 
       {closed.length > 0 ? (
-        <div className="mt-6">
+        <div className="mt-8">
           <button
             type="button"
-            className="min-h-11 text-left text-sm text-primary underline-offset-4 hover:underline"
+            className="min-h-11 text-left text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             onClick={onToggleClosed}
           >
             {closedOpen
@@ -166,38 +113,93 @@ export function TaskList({
               : `Show ${closed.length} completed and cancelled`}
           </button>
           {closedOpen ? (
-            <ul className="mt-3 flex flex-col gap-3">
+            <ul className="mt-1">
               {closed.map((task) => (
-                <li
+                <TaskRow
                   key={task.id}
-                  className="pb-card flex flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="min-w-0">
-                    <button
-                      type="button"
-                      className="min-h-11 text-left text-base break-words whitespace-normal"
-                      onClick={() => onEdit(task.id)}
-                    >
-                      {task.title}
-                    </button>
-                    <p className="flex flex-wrap items-center gap-1.5 text-sm break-words text-muted-foreground">
-                      {tagLabel(task.tag)} · {workingToward(task, plans)} ·
-                      <Calendar className="size-3.5" aria-hidden="true" />
-                      {formatTarget(task.targetOn)}
-                    </p>
-                  </div>
-                  <StatusSelect
-                    title={task.title}
-                    value={task.status}
-                    onChange={(status) => onStatus(task.id, status)}
-                  />
-                </li>
+                  task={task}
+                  plans={plans}
+                  dimmed
+                  onEdit={onEdit}
+                  onNotes={onNotes}
+                  onStatus={onStatus}
+                />
               ))}
             </ul>
           ) : null}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function TaskRow({
+  task,
+  plans,
+  dimmed = false,
+  onEdit,
+  onNotes,
+  onStatus,
+}: {
+  task: TaskItem;
+  plans: PlanOption[];
+  dimmed?: boolean;
+  onEdit: (taskId: string) => void;
+  onNotes: (taskId: string) => void;
+  onStatus: (taskId: string, status: TaskStatus) => void;
+}) {
+  const meta = [tagLabel(task.tag), workingToward(task, plans)].filter(
+    (part) => part !== "—",
+  );
+
+  return (
+    <li
+      className={`border-b border-border py-3 last:border-b-0 ${dimmed ? "opacity-70" : ""}`}
+    >
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:gap-5">
+        <div className="flex min-w-0 flex-1 gap-3">
+          <span className="mt-2.5 shrink-0">
+            <Dot tone={statusTone[task.status]} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              className="min-h-11 w-full text-left text-[15px] leading-snug break-words whitespace-normal"
+              onClick={() => onEdit(task.id)}
+            >
+              {task.title}
+            </button>
+            {meta.length > 0 ? (
+              <p className="text-[13px] break-words text-muted-foreground">
+                {meta.join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex min-h-11 shrink-0 items-center gap-3 pl-6 md:pl-0">
+          {task.notes.length > 0 ? (
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground"
+              aria-label={`${task.notes.length} notes`}
+              onClick={() => onNotes(task.id)}
+            >
+              <StickyNote className="size-3.5" aria-hidden="true" />
+              {task.notes.length}
+            </button>
+          ) : null}
+          <span className="inline-flex items-center gap-1.5 text-[13px] whitespace-nowrap text-muted-foreground">
+            <Calendar className="size-3.5" aria-hidden="true" />
+            {formatTarget(task.targetOn)}
+          </span>
+          <StatusSelect
+            title={task.title}
+            value={task.status}
+            onChange={(status) => onStatus(task.id, status)}
+          />
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -211,20 +213,20 @@ function StatusSelect({
   onChange: (status: TaskStatus) => void;
 }) {
   return (
-    <div className="flex max-w-[168px] items-center gap-2">
-      <Dot tone={statusTone[value]} />
-      <Select value={value} onValueChange={(next) => next && onChange(next)}>
-        <SelectTrigger className="w-full" aria-label={`Status for ${title}`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {TASK_STATUSES.map((status) => (
-            <SelectItem key={status} value={status}>
-              {status}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={value} onValueChange={(next) => next && onChange(next)}>
+      <SelectTrigger
+        className="min-h-11 w-[168px] border-transparent bg-transparent px-2 hover:bg-foreground/[0.04]"
+        aria-label={`Status for ${title}`}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {TASK_STATUSES.map((status) => (
+          <SelectItem key={status} value={status}>
+            {status}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

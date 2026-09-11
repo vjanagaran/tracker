@@ -27,13 +27,13 @@ export function CycleList({ slug, cycles, earlierId, laterId }: CycleListProps) 
       <p className="mb-3 max-w-prose text-sm text-muted-foreground">
         Latest first. Open a cycle to edit its rating.
       </p>
-      <ul className="pb-card max-w-xl divide-y divide-border overflow-hidden">
+      <ul className="max-w-xl divide-y divide-border">
         {cycles.map((cycle, index) => {
           const selected = cycle.id === earlierId || cycle.id === laterId;
           return (
             <li
               key={cycle.id}
-              className={`flex min-h-14 items-center justify-between gap-3 px-4 ${
+              className={`flex min-h-14 items-center justify-between gap-3 ${
                 selected ? "bg-accent" : ""
               }`}
             >

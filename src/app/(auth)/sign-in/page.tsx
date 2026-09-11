@@ -7,8 +7,9 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
   return (
-    <div className="pb-card p-6">
-      <h1 className="mb-1 text-xl font-semibold tracking-tight">Sign in</h1>
+    <div>
+      <p className="mb-8 text-sm font-medium tracking-tight">Personal Board</p>
+      <h1 className="mb-1 text-[1.75rem] font-semibold tracking-tight">Sign in</h1>
       <p className="mb-6 text-sm text-muted-foreground">
         Use the email you were invited with.
       </p>

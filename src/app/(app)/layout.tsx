@@ -29,7 +29,7 @@ export default async function AppLayout({
         <MobileHeader name={profile?.full_name ?? ""} />
         <main
           id="main"
-          className="flex-1 px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-8"
+          className="flex-1 px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"
         >
           <Providers>{children}</Providers>
         </main>

@@ -142,10 +142,10 @@ export function RosterTable({
   return (
     <div>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
-      <div className="pb-card hidden overflow-hidden md:block">
+      <div className="hidden md:block">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+            <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
               <th className="px-3 py-3">Name</th>
               <th className="w-[160px] px-3 py-3">Role</th>
               <th className="w-[140px] px-3 py-3">Status</th>
@@ -227,7 +227,7 @@ export function RosterTable({
         </table>
       </div>
 
-      <ul className="pb-card divide-y divide-border overflow-hidden md:hidden">
+      <ul className="divide-y divide-border md:hidden">
         {members.map((member) => (
           <li key={member.id} className="px-4 py-4">
             <p className="mb-2 text-sm font-medium">

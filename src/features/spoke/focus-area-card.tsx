@@ -91,11 +91,9 @@ export function FocusAreaCard({ area }: { area: FocusArea }) {
 
   return (
     <article className="pb-card">
-      <header className="flex items-start justify-between gap-3 rounded-t-lg border-b border-border bg-muted px-3.5 py-3">
+      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
-            Focus area
-          </p>
+          <p className="mb-1 text-xs text-muted-foreground">Focus area</p>
           <Input
             defaultValue={area.currentIssue}
             required
@@ -156,7 +154,7 @@ export function FocusAreaCard({ area }: { area: FocusArea }) {
       <div className="px-3.5 py-1">
         <table className="hidden w-full border-collapse md:table">
           <thead>
-            <tr className="border-b border-border text-left text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+            <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
               <th className="w-[52%] py-2 pr-3">Action plan</th>
               <th className="py-2 pr-3">What makes it hard</th>
               <th className="w-[132px] py-2">Status</th>
@@ -185,7 +183,7 @@ export function FocusAreaCard({ area }: { area: FocusArea }) {
 
         <ul className="flex flex-col gap-4 py-3 md:hidden">
           {plans.map((plan) => (
-            <li key={plan.id} className="pb-card p-3">
+            <li key={plan.id} className="border-b border-border py-3 last:border-b-0">
               <PlanRow
                 plan={plan}
                 layout="stack"

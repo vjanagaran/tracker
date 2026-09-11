@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -15,7 +22,11 @@ import { TaskNotes } from "./task-notes";
 import { useTasks } from "./use-tasks";
 import type { PlanOption, TaskItem } from "./types";
 
-type Mode = { view: "list" } | { view: "create" } | { view: "edit"; id: string };
+type Mode =
+  | { view: "list" }
+  | { view: "create" }
+  | { view: "edit"; id: string }
+  | { view: "notes"; id: string };
 
 export function TaskWorkspace({
   initialTasks,
@@ -29,16 +40,19 @@ export function TaskWorkspace({
   const [closedOpen, setClosedOpen] = useState(false);
 
   const editing = mode.view === "edit" ? tasks.find((task) => task.id === mode.id) : null;
+  const noting = mode.view === "notes" ? tasks.find((task) => task.id === mode.id) : null;
 
   function close() {
     setMode({ view: "list" });
   }
 
   return (
-    <div>
-      <header className="mb-6 border-b border-border pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
-        <p className="mt-2 max-w-prose text-sm text-muted-foreground">
+    <div className="max-w-4xl">
+      <header className="mb-2">
+        <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
+          Tasks
+        </h1>
+        <p className="mt-1.5 max-w-prose text-sm text-muted-foreground">
           Open items, earliest commitment first. This is the list you share when it is your turn.
         </p>
       </header>
@@ -50,12 +64,37 @@ export function TaskWorkspace({
         statusError={statusError}
         onAdd={() => setMode({ view: "create" })}
         onEdit={(id) => setMode({ view: "edit", id })}
+        onNotes={(id) => setMode({ view: "notes", id })}
         onStatus={updateStatus}
         onToggleClosed={() => setClosedOpen((open) => !open)}
       />
 
+      <Dialog
+        open={mode.view === "notes"}
+        onOpenChange={(open) => {
+          if (!open) {
+            close();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[min(40rem,calc(100dvh-2rem))] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Notes</DialogTitle>
+            <DialogDescription>{noting?.title ?? "Task notes"}</DialogDescription>
+          </DialogHeader>
+          {noting ? (
+            <TaskNotes
+              taskId={noting.id}
+              notes={noting.notes}
+              showHeading={false}
+              onAdded={(note) => appendNote(noting.id, note)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       <Sheet
-        open={mode.view !== "list"}
+        open={mode.view === "create" || mode.view === "edit"}
         onOpenChange={(open) => {
           if (!open) {
             close();

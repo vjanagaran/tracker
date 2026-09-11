@@ -4,10 +4,10 @@ import { cn } from "cn";
 export type BadgeTone = "neutral" | "accent" | "positive" | "warn";
 
 const toneClasses: Record<BadgeTone, string> = {
-  neutral: "border-border bg-card text-muted-foreground",
-  accent: "border-primary/25 bg-accent text-primary",
-  positive: "border-status-positive/25 bg-card text-status-positive",
-  warn: "border-status-warn/25 bg-card text-status-warn",
+  neutral: "border-transparent bg-muted text-muted-foreground",
+  accent: "border-transparent bg-accent text-foreground",
+  positive: "border-transparent bg-status-positive/10 text-status-positive",
+  warn: "border-transparent bg-status-warn/10 text-status-warn",
 };
 
 const dotClasses: Record<BadgeTone, string> = {

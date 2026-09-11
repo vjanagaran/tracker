@@ -12,6 +12,24 @@ export type WheelSpoke = {
   isPredefined: boolean;
 };
 
+export type WheelSheetPlan = {
+  id: string;
+  description: string;
+  challenge: string | null;
+};
+
+export type WheelSheetFocus = {
+  id: string;
+  currentIssue: string;
+  goal1y: string | null;
+  goal5y: string | null;
+  plans: WheelSheetPlan[];
+};
+
+export type WheelSheetSpoke = WheelSpoke & {
+  focusAreas: WheelSheetFocus[];
+};
+
 export type WheelCycle = {
   id: string;
   period: string;

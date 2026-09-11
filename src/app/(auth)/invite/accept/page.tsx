@@ -59,12 +59,12 @@ export default async function AcceptInvitePage({
   const pendingHash = Boolean(params.token_hash) && !setupSession && !linkError;
 
   return (
-    <div className="pb-card p-6">
+    <div>
       <HashSessionCatcher />
       {user && !setupSession && !pendingHash ? (
         <InviteSessionGate setupSession={setupSession} />
       ) : null}
-      <h1 className="mb-1 text-xl font-semibold tracking-tight">
+      <h1 className="mb-1 text-[1.75rem] font-semibold tracking-tight">
         {boardName ? `You have been invited to ${boardName}` : "You have been invited"}
       </h1>
       <p className="mb-6 text-sm text-muted-foreground">
