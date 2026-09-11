@@ -11,5 +11,15 @@ export const acceptInviteSchema = z.object({
   password: z.string().min(8, "Use at least 8 characters."),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Enter a valid email."),
+});
+
+export const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Use at least 8 characters."),
+});
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

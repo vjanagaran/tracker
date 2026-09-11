@@ -39,3 +39,11 @@ export function inviteRateLimitKey(userId: string) {
 export function inviteRateLimitedMessage() {
   return "Too many invites in a short time. Wait a few minutes and try again.";
 }
+
+export function passwordResetRateLimitKey(email: string) {
+  return `password-reset:${email.trim().toLowerCase()}`;
+}
+
+export function passwordResetRateLimitedMessage() {
+  return "Too many reset attempts. Wait a few minutes and try again.";
+}

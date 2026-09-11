@@ -1,31 +1,42 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn } from "./actions";
-import { signInSchema, type SignInInput } from "./schema";
+import { requestPasswordReset } from "./actions";
+import { forgotPasswordSchema, type ForgotPasswordInput } from "./schema";
 
-export function SignInForm() {
+export function ForgotPasswordForm() {
   const [formError, setFormError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignInInput>({
-    resolver: zodResolver(signInSchema),
+  } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
   });
 
-  async function onSubmit(values: SignInInput) {
+  async function onSubmit(values: ForgotPasswordInput) {
     setFormError(null);
-    const result = await signIn(values);
-    if (result?.error) {
+    const result = await requestPasswordReset(values);
+    if ("error" in result) {
       setFormError(result.error);
+      return;
     }
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        If that email has an account, a reset link is on its way. Open it to set a
+        new password.
+      </p>
+    );
   }
 
   return (
@@ -43,27 +54,9 @@ export function SignInForm() {
           <p className="text-sm text-destructive">{errors.email.message}</p>
         ) : null}
       </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link href="/forgot-password" className="text-sm text-primary">
-            Forgot password?
-          </Link>
-        </div>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          className="min-h-11"
-          {...register("password")}
-        />
-        {errors.password ? (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        ) : null}
-      </div>
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
       <Button type="submit" className="min-h-11 px-4" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in" : "Sign in"}
+        {isSubmitting ? "Sending link" : "Send reset link"}
       </Button>
     </form>
   );

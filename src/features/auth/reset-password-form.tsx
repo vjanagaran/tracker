@@ -1,28 +1,27 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn } from "./actions";
-import { signInSchema, type SignInInput } from "./schema";
+import { resetPassword } from "./actions";
+import { resetPasswordSchema, type ResetPasswordInput } from "./schema";
 
-export function SignInForm() {
+export function ResetPasswordForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignInInput>({
-    resolver: zodResolver(signInSchema),
+  } = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  async function onSubmit(values: SignInInput) {
+  async function onSubmit(values: ResetPasswordInput) {
     setFormError(null);
-    const result = await signIn(values);
+    const result = await resetPassword(values);
     if (result?.error) {
       setFormError(result.error);
     }
@@ -31,29 +30,11 @@ export function SignInForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          className="min-h-11"
-          {...register("email")}
-        />
-        {errors.email ? (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        ) : null}
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link href="/forgot-password" className="text-sm text-primary">
-            Forgot password?
-          </Link>
-        </div>
+        <Label htmlFor="password">New password</Label>
         <Input
           id="password"
           type="password"
-          autoComplete="current-password"
+          autoComplete="new-password"
           className="min-h-11"
           {...register("password")}
         />
@@ -63,7 +44,7 @@ export function SignInForm() {
       </div>
       {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
       <Button type="submit" className="min-h-11 px-4" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in" : "Sign in"}
+        {isSubmitting ? "Saving password" : "Save new password"}
       </Button>
     </form>
   );
