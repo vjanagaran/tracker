@@ -7,7 +7,7 @@ export default async function HomePage() {
   const { data } = await supabase.auth.getClaims();
 
   if (data?.claims) {
-    redirect("/wheel/life");
+    redirect("/tasks");
   }
 
   return (

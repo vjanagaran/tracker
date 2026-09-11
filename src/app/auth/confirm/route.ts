@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       ? "/invite/accept"
       : type === "recovery"
         ? "/reset-password"
-        : "/wheel/life";
+        : "/tasks";
 
   if (tokenHash && type) {
     const supabase = await createClient();

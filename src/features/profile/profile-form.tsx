@@ -8,10 +8,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { removeProfilePhoto, updateProfile, uploadProfilePhoto } from "./actions";
+import { createClient } from "@/lib/supabase/client";
+import { removeProfilePhoto, saveProfilePhotoUrl, updateProfile } from "./actions";
 import {
+  AVATAR_BUCKET,
   PHOTO_MAX_BYTES,
   PHOTO_MIME_TYPES,
+  avatarObjectPath,
   profileSchema,
   type ProfileInput,
 } from "./schema";
@@ -60,29 +63,57 @@ export function ProfileForm({ defaultValues, initialPhotoUrl }: ProfileFormProps
     }
 
     setPhotoBusy(true);
-    const formData = new FormData();
-    formData.set("file", file);
-    const result = await uploadProfilePhoto(formData);
-    setPhotoBusy(false);
-    if ("error" in result) {
-      setPhotoError(result.error);
-      return;
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setPhotoError("Your session ended. Sign in again.");
+        return;
+      }
+
+      const path = avatarObjectPath(user.id);
+      const { error: uploadError } = await supabase.storage
+        .from(AVATAR_BUCKET)
+        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+      if (uploadError) {
+        setPhotoError(uploadError.message);
+        return;
+      }
+
+      const { data: publicUrl } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+      const photoUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+      const result = await saveProfilePhotoUrl(photoUrl);
+      if ("error" in result) {
+        setPhotoError(result.error);
+        return;
+      }
+      setPhotoUrl(result.photoUrl);
+      toast.success("Photo updated.");
+    } catch {
+      setPhotoError("The photo could not be uploaded. Try again.");
+    } finally {
+      setPhotoBusy(false);
     }
-    setPhotoUrl(result.photoUrl);
-    toast.success("Photo updated.");
   }
 
   async function onRemovePhoto() {
     setPhotoError(null);
     setPhotoBusy(true);
-    const result = await removeProfilePhoto();
-    setPhotoBusy(false);
-    if ("error" in result) {
-      setPhotoError(result.error);
-      return;
+    try {
+      const result = await removeProfilePhoto();
+      if ("error" in result) {
+        setPhotoError(result.error);
+        return;
+      }
+      setPhotoUrl(null);
+      toast.success("Photo removed.");
+    } catch {
+      setPhotoError("The photo could not be removed. Try again.");
+    } finally {
+      setPhotoBusy(false);
     }
-    setPhotoUrl(null);
-    toast.success("Photo removed.");
   }
 
   return (

@@ -46,7 +46,7 @@ export async function signIn(
     };
   }
 
-  redirect("/wheel/life");
+  redirect("/tasks");
 }
 
 export async function acceptInvite(
@@ -89,7 +89,7 @@ export async function acceptInvite(
     return { error: profileError.message };
   }
 
-  redirect("/wheel/life");
+  redirect("/tasks");
 }
 
 export type ForgotPasswordResult = { error: string } | { sent: true };
@@ -149,7 +149,7 @@ export async function resetPassword(
     return { error: error.message };
   }
 
-  redirect("/wheel/life");
+  redirect("/tasks");
 }
 
 export async function signOut() {

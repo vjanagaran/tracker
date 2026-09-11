@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { PHOTO_MAX_BYTES, PHOTO_MIME_TYPES, profileSchema } from "./schema";
+import { AVATAR_BUCKET, avatarObjectPath, profileSchema } from "./schema";
 
 export type ProfileActionResult = { error: string } | { saved: true };
 export type ProfilePhotoActionResult = { error: string } | { photoUrl: string };
@@ -44,24 +44,9 @@ export async function updateProfile(
   return { saved: true };
 }
 
-function avatarPath(userId: string) {
-  return `${userId}/avatar`;
-}
-
-export async function uploadProfilePhoto(
-  formData: FormData,
+export async function saveProfilePhotoUrl(
+  photoUrl: string,
 ): Promise<ProfilePhotoActionResult> {
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return { error: "Choose a photo to upload." };
-  }
-  if (!PHOTO_MIME_TYPES.includes(file.type as (typeof PHOTO_MIME_TYPES)[number])) {
-    return { error: "Use a PNG, JPEG or WebP image." };
-  }
-  if (file.size > PHOTO_MAX_BYTES) {
-    return { error: "Keep the photo under 5 MB." };
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -71,19 +56,14 @@ export async function uploadProfilePhoto(
     return { error: "Your session ended. Sign in again." };
   }
 
-  const path = avatarPath(user.id);
-  const { error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true, contentType: file.type });
-
-  if (uploadError) {
-    return { error: uploadError.message };
+  const origin = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const expected = origin
+    ? `${origin}/storage/v1/object/public/${AVATAR_BUCKET}/${avatarObjectPath(user.id)}`
+    : null;
+  const [withoutQuery] = photoUrl.split("?");
+  if (!expected || withoutQuery !== expected) {
+    return { error: "That photo could not be saved." };
   }
-
-  const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(path);
-  // A cache-busting query param: the object path never changes between
-  // uploads, so this keeps the browser from showing the old photo.
-  const photoUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
 
   const { error: updateError } = await supabase
     .from("profiles")
@@ -110,8 +90,8 @@ export async function removeProfilePhoto(): Promise<RemoveProfilePhotoResult> {
   }
 
   const { error: removeError } = await supabase.storage
-    .from("avatars")
-    .remove([avatarPath(user.id)]);
+    .from(AVATAR_BUCKET)
+    .remove([avatarObjectPath(user.id)]);
 
   if (removeError) {
     return { error: removeError.message };

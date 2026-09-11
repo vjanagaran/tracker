@@ -11,10 +11,10 @@ export function NotFoundState() {
       </p>
       <p className="mt-4">
         <Link
-          href="/wheel/life"
+          href="/tasks"
           className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline"
         >
-          Open Life wheel
+          Open tasks
         </Link>
       </p>
     </div>

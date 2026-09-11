@@ -9,3 +9,8 @@ export type ProfileInput = z.infer<typeof profileSchema>;
 
 export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 export const PHOTO_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+export const AVATAR_BUCKET = "avatars";
+
+export function avatarObjectPath(userId: string) {
+  return `${userId}/avatar`;
+}

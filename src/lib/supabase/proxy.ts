@@ -77,7 +77,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (claims && pathname.startsWith("/sign-in")) {
-    return redirectWithCookies(request, supabaseResponse, "/wheel/life");
+    return redirectWithCookies(request, supabaseResponse, "/tasks");
   }
 
   return supabaseResponse;
