@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { roleLabel } from "@/features/boards/labels";
-import { updateMember } from "./actions";
+import { removeMember, updateMember } from "./actions";
 import { resendInvite } from "./invite-actions";
 import type { AdminMember } from "./types";
 
@@ -60,6 +70,7 @@ export function RosterTable({
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<AdminMember | null>(null);
 
   async function resend(member: AdminMember) {
     setResendingId(member.id);
@@ -98,6 +109,28 @@ export function RosterTable({
     router.refresh();
   }
 
+  async function confirmRemove() {
+    if (!removeTarget) {
+      return;
+    }
+    const member = removeTarget;
+    setRemoveTarget(null);
+    setPendingId(member.id);
+    setError(null);
+    const result = await removeMember({
+      membershipId: member.id,
+      boardId,
+    });
+    setPendingId(null);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setMembers((current) => current.filter((row) => row.id !== member.id));
+    toast.success("Removed from the board.");
+    router.refresh();
+  }
+
   if (members.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -117,6 +150,9 @@ export function RosterTable({
               <th className="w-[160px] px-3 py-3">Role</th>
               <th className="w-[140px] px-3 py-3">Status</th>
               <th className="px-3 py-3">Invitation</th>
+              <th className="w-[100px] px-3 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -174,6 +210,17 @@ export function RosterTable({
                     onResend={(target) => void resend(target)}
                   />
                 </td>
+                <td className="px-3 py-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 px-2 text-destructive sm:min-h-7"
+                    disabled={pendingId === member.id}
+                    onClick={() => setRemoveTarget(member)}
+                  >
+                    Remove
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -229,10 +276,50 @@ export function RosterTable({
                 pending={resendingId === member.id}
                 onResend={(target) => void resend(target)}
               />
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-11 justify-start px-2 text-destructive"
+                disabled={pendingId === member.id}
+                onClick={() => setRemoveTarget(member)}
+              >
+                Remove
+              </Button>
             </div>
           </li>
         ))}
       </ul>
+
+      <AlertDialog
+        open={removeTarget != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRemoveTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Remove {removeTarget?.fullName || "this member"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              They leave this board. Their wheels, plans and tasks stay with them
+              and they can be added again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep them</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pendingId === removeTarget?.id}
+              onClick={() => void confirmRemove()}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

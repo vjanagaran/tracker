@@ -5,6 +5,7 @@ import { requireSuperadmin } from "@/lib/auth/require-superadmin";
 import {
   addExistingMemberSchema,
   createBoardSchema,
+  removeMemberSchema,
   updateMemberSchema,
 } from "./schema";
 
@@ -142,6 +143,57 @@ export async function addExistingMember(input: unknown): Promise<AdminActionResu
     if (error) {
       return { error: chairmanTakenMessage(error) };
     }
+  }
+
+  refreshAdmin(parsed.data.boardId);
+  return { ok: true };
+}
+
+export async function removeMember(input: unknown): Promise<AdminActionResult> {
+  const parsed = removeMemberSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Check the member and try again." };
+  }
+
+  const { supabase } = await requireSuperadmin();
+  const { data: membership, error: membershipError } = await supabase
+    .from("board_members")
+    .select("id, role, status")
+    .eq("id", parsed.data.membershipId)
+    .eq("board_id", parsed.data.boardId)
+    .maybeSingle();
+
+  if (membershipError) {
+    return { error: membershipError.message };
+  }
+  if (!membership) {
+    return { error: "That member could not be found." };
+  }
+
+  if (membership.role === "chairman" && membership.status === "active") {
+    const { count, error: countError } = await supabase
+      .from("board_members")
+      .select("id", { count: "exact", head: true })
+      .eq("board_id", parsed.data.boardId)
+      .eq("role", "chairman")
+      .eq("status", "active");
+
+    if (countError) {
+      return { error: countError.message };
+    }
+    if ((count ?? 0) <= 1) {
+      return { error: "This board needs a chairman. Give the role to someone else first." };
+    }
+  }
+
+  const { error } = await supabase
+    .from("board_members")
+    .delete()
+    .eq("id", parsed.data.membershipId)
+    .eq("board_id", parsed.data.boardId);
+
+  if (error) {
+    return { error: error.message };
   }
 
   refreshAdmin(parsed.data.boardId);
