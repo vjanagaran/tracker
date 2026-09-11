@@ -13,6 +13,9 @@ export type VelocityRow = {
   userId: string;
   fullName: string;
   photoUrl: string | null;
+  email: string | null;
+  phone: string | null;
+  role: Enums<"member_role">;
   completedCount: number;
   openCount: number;
 };

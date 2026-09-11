@@ -140,26 +140,48 @@ export async function loadBoardDashboard(
         userId: row.user_id,
         fullName: row.full_name,
         photoUrl: null,
+        email: null,
+        phone: null,
+        role: "director",
         completedCount: Number(row.completed_count),
         openCount: Number(row.open_count),
       }));
 
       const memberIds = velocity.map((row) => row.userId);
       if (memberIds.length > 0) {
-        const { data: photos, error: photoError } = await supabase
-          .from("profiles")
-          .select("id, photo_url")
-          .in("id", memberIds);
+        const [{ data: profiles, error: profileError }, { data: roles, error: roleError }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("id, photo_url, phone, email")
+              .in("id", memberIds),
+            supabase
+              .from("board_members")
+              .select("user_id, role")
+              .eq("board_id", boardId)
+              .eq("status", "active")
+              .in("user_id", memberIds),
+          ]);
 
-        if (photoError) {
-          throw new Error(photoError.message);
+        if (profileError) {
+          throw new Error(profileError.message);
+        }
+        if (roleError) {
+          throw new Error(roleError.message);
         }
 
-        const byId = new Map((photos ?? []).map((row) => [row.id, row.photo_url]));
-        velocity = velocity.map((row) => ({
-          ...row,
-          photoUrl: byId.get(row.userId) ?? null,
-        }));
+        const profileById = new Map((profiles ?? []).map((row) => [row.id, row]));
+        const roleById = new Map((roles ?? []).map((row) => [row.user_id, row.role]));
+        velocity = velocity.map((row) => {
+          const profile = profileById.get(row.userId);
+          return {
+            ...row,
+            photoUrl: profile?.photo_url ?? null,
+            email: profile?.email ?? null,
+            phone: profile?.phone ?? null,
+            role: roleById.get(row.userId) ?? "director",
+          };
+        });
       }
     }
   }

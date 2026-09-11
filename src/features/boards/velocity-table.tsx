@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+import { ChairmanIcon } from "./chairman-icon";
 import type { VelocityRow } from "./types";
 
 function MemberAvatar({ photoUrl }: { photoUrl: string | null }) {
@@ -13,6 +14,60 @@ function MemberAvatar({ photoUrl }: { photoUrl: string | null }) {
       ) : (
         <User className="size-4 text-muted-foreground" />
       )}
+    </span>
+  );
+}
+
+function MemberIdentity({ row }: { row: VelocityRow }) {
+  const name = row.fullName || "Unnamed";
+  return (
+    <span className="flex items-center gap-3">
+      <MemberAvatar photoUrl={row.photoUrl} />
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <span className="text-sm">{name}</span>
+          {row.role === "chairman" ? (
+            <span className="inline-flex text-primary" title="Chairman">
+              <ChairmanIcon className="size-4 shrink-0" />
+              <span className="sr-only">Chairman</span>
+            </span>
+          ) : null}
+        </span>
+        <MemberContact email={row.email} phone={row.phone} />
+      </span>
+    </span>
+  );
+}
+
+function MemberContact({
+  email,
+  phone,
+}: {
+  email: string | null;
+  phone: string | null;
+}) {
+  if (!email && !phone) {
+    return null;
+  }
+
+  return (
+    <span className="mt-1 flex flex-col items-start gap-0.5 text-xs text-muted-foreground">
+      {email ? (
+        <a
+          href={`mailto:${email}`}
+          className="inline-flex min-h-11 items-center break-all hover:text-foreground md:min-h-0"
+        >
+          {email}
+        </a>
+      ) : null}
+      {phone ? (
+        <a
+          href={`tel:${phone.replace(/\s+/g, "")}`}
+          className="inline-flex min-h-11 items-center hover:text-foreground md:min-h-0"
+        >
+          {phone}
+        </a>
+      ) : null}
     </span>
   );
 }
@@ -38,40 +93,28 @@ export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const name = row.fullName || "Unnamed";
-              return (
-                <tr key={row.userId} className="border-b border-border last:border-b-0">
-                  <td className="px-3 py-3">
-                    <span className="flex items-center gap-3">
-                      <MemberAvatar photoUrl={row.photoUrl} />
-                      <span className="text-sm">{name}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-4 text-base font-medium">{row.completedCount}</td>
-                  <td className="px-3 py-4 text-sm">{row.openCount}</td>
-                </tr>
-              );
-            })}
+            {rows.map((row) => (
+              <tr key={row.userId} className="border-b border-border last:border-b-0">
+                <td className="px-3 py-3">
+                  <MemberIdentity row={row} />
+                </td>
+                <td className="px-3 py-4 text-base font-medium">{row.completedCount}</td>
+                <td className="px-3 py-4 text-sm">{row.openCount}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       <ul className="pb-card divide-y divide-border overflow-hidden md:hidden">
-        {rows.map((row) => {
-          const name = row.fullName || "Unnamed";
-          return (
-            <li key={row.userId} className="flex items-center gap-3 px-4 py-4">
-              <MemberAvatar photoUrl={row.photoUrl} />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Finished this fortnight {row.completedCount} · Open now {row.openCount}
-                </p>
-              </div>
-            </li>
-          );
-        })}
+        {rows.map((row) => (
+          <li key={row.userId} className="px-4 py-4">
+            <MemberIdentity row={row} />
+            <p className="mt-2 text-sm text-muted-foreground">
+              Finished this fortnight {row.completedCount} · Open now {row.openCount}
+            </p>
+          </li>
+        ))}
       </ul>
 
       <p className="mt-3 text-xs text-muted-foreground">
