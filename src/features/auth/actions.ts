@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { resetPasswordUrl } from "@/lib/app-url";
+import { authLinkErrorMessage } from "./auth-link-error";
 import {
   passwordResetRateLimitKey,
   passwordResetRateLimitedMessage,
@@ -119,6 +121,32 @@ export async function requestPasswordReset(
   // Supabase does not report whether the email has an account. Answer the
   // same way either way, so this cannot be used to find out who does.
   return { sent: true };
+}
+
+export async function consumeAuthLink(
+  tokenHash: string,
+  type: EmailOtpType,
+): Promise<AuthActionResult | void> {
+  if (!tokenHash.trim() || (type !== "recovery" && type !== "invite")) {
+    return { error: "This link could not be used. Send another link and open it once." };
+  }
+
+  const supabase = await createClient();
+  await supabase.auth.signOut({ scope: "local" });
+  const { error } = await supabase.auth.verifyOtp({
+    type,
+    token_hash: tokenHash,
+  });
+
+  if (error) {
+    return {
+      error:
+        authLinkErrorMessage(error.code, error.message) ??
+        "This link could not be used. Send another link and open it once.",
+    };
+  }
+
+  redirect(type === "invite" ? "/invite/accept" : "/reset-password");
 }
 
 export async function resetPassword(

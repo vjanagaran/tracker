@@ -9,11 +9,32 @@ export function HashSessionCatcher({ next = "/invite/accept" }: { next?: string 
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (!hash.includes("access_token")) {
+    if (!hash) {
       return;
     }
 
     const params = new URLSearchParams(hash.replace(/^#/, ""));
+    const errorCode = params.get("error_code") ?? params.get("error");
+    const errorDescription = params.get("error_description");
+
+    if (errorCode || errorDescription) {
+      const nextUrl = new URL(window.location.pathname, window.location.origin);
+      if (errorCode) {
+        nextUrl.searchParams.set("error_code", errorCode);
+      }
+      if (errorDescription) {
+        nextUrl.searchParams.set("error_description", errorDescription);
+      }
+      const href = `${nextUrl.pathname}${nextUrl.search}`;
+      window.history.replaceState(null, "", href);
+      router.replace(href);
+      return;
+    }
+
+    if (!hash.includes("access_token")) {
+      return;
+    }
+
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
     const supabase = createClient();
