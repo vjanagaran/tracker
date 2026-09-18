@@ -13,6 +13,7 @@ export type AdminMember = {
   id: string;
   userId: string;
   fullName: string;
+  email: string;
   role: Enums<"member_role">;
   status: Enums<"member_state">;
   joinedOn: string;

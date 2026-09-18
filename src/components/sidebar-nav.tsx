@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldCheck, UserRound } from "lucide-react";
-import { appNav, isNavActive } from "@/components/app-nav";
+import { desktopNav, isNavActive } from "@/components/app-nav";
 import type { MemberBoard } from "@/features/boards/types";
 import { cn } from "cn";
 
@@ -39,7 +39,7 @@ export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavPro
         <p className="mt-0.5 text-xs text-muted-foreground">Personal Board</p>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 px-2">
-        {appNav.map((item) => {
+        {desktopNav.map((item) => {
           if (item.href === "/boards") {
             const indexActive = pathname === "/boards";
             return (
@@ -74,7 +74,7 @@ export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavPro
             );
           }
 
-          const active = isNavActive(pathname, item.href);
+          const active = isNavActive(pathname, item);
           return (
             <Link
               key={item.href}

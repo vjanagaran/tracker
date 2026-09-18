@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { AVATAR_BUCKET, avatarObjectPath, profileSchema } from "./schema";
+import {
+  AVATAR_BUCKET,
+  avatarObjectPath,
+  emptyToNull,
+  normalizeHttpUrl,
+  parseFoundedYear,
+  profileSchema,
+} from "./schema";
 
 export type ProfileActionResult = { error: string } | { saved: true };
 export type ProfilePhotoActionResult = { error: string } | { photoUrl: string };
@@ -31,7 +38,16 @@ export async function updateProfile(
     .from("profiles")
     .update({
       full_name: parsed.data.fullName,
-      phone: parsed.data.phone ? parsed.data.phone : null,
+      phone: emptyToNull(parsed.data.phone),
+      designation: emptyToNull(parsed.data.designation),
+      company: emptyToNull(parsed.data.company),
+      company_founded_year: parseFoundedYear(parsed.data.companyFoundedYear),
+      industry: emptyToNull(parsed.data.industry),
+      city: emptyToNull(parsed.data.city),
+      about: emptyToNull(parsed.data.about),
+      about_company: emptyToNull(parsed.data.aboutCompany),
+      website: normalizeHttpUrl(parsed.data.website),
+      linkedin: normalizeHttpUrl(parsed.data.linkedin),
     })
     .eq("id", user.id);
 
@@ -40,7 +56,8 @@ export async function updateProfile(
   }
 
   revalidatePath("/profile");
-  revalidatePath("/wheel/life");
+  revalidatePath(`/people/${user.id}`);
+  revalidatePath("/boards");
   return { saved: true };
 }
 
@@ -75,7 +92,8 @@ export async function saveProfilePhotoUrl(
   }
 
   revalidatePath("/profile");
-  revalidatePath("/wheel/life");
+  revalidatePath(`/people/${user.id}`);
+  revalidatePath("/boards");
   return { photoUrl };
 }
 
@@ -107,6 +125,7 @@ export async function removeProfilePhoto(): Promise<RemoveProfilePhotoResult> {
   }
 
   revalidatePath("/profile");
-  revalidatePath("/wheel/life");
+  revalidatePath(`/people/${user.id}`);
+  revalidatePath("/boards");
   return { removed: true };
 }

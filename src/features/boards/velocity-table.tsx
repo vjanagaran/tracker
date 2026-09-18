@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { User } from "lucide-react";
 import { ChairmanIcon } from "./chairman-icon";
 import type { VelocityRow } from "./types";
@@ -25,7 +26,12 @@ function MemberIdentity({ row }: { row: VelocityRow }) {
       <MemberAvatar photoUrl={row.photoUrl} />
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
-          <span className="text-sm">{name}</span>
+          <Link
+            href={`/people/${row.userId}`}
+            className="text-sm text-primary underline-offset-4 hover:underline"
+          >
+            {name}
+          </Link>
           {row.role === "chairman" ? (
             <span className="inline-flex text-primary" title="Chairman">
               <ChairmanIcon className="size-4 shrink-0" />

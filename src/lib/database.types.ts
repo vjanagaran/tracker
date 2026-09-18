@@ -209,36 +209,142 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      note_files: {
         Row: {
           created_at: string
-          email: string | null
-          full_name: string
           id: string
-          is_superadmin: boolean
-          phone: string | null
-          photo_url: string | null
-          updated_at: string
+          kind: Database["public"]["Enums"]["note_file_kind"]
+          mime_type: string
+          note_id: string
+          original_name: string
+          size_bytes: number
+          storage_path: string
         }
         Insert: {
           created_at?: string
-          email?: string | null
-          full_name?: string
           id: string
-          is_superadmin?: boolean
-          phone?: string | null
-          photo_url?: string | null
-          updated_at?: string
+          kind: Database["public"]["Enums"]["note_file_kind"]
+          mime_type: string
+          note_id: string
+          original_name: string
+          size_bytes: number
+          storage_path: string
         }
         Update: {
           created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["note_file_kind"]
+          mime_type?: string
+          note_id?: string
+          original_name?: string
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_files_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          body: Json
+          body_text: string
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: Json
+          body_text?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: Json
+          body_text?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          about: string | null
+          about_company: string | null
+          city: string | null
+          company: string | null
+          company_founded_year: number | null
+          created_at: string
+          designation: string | null
+          email: string | null
+          full_name: string
+          id: string
+          industry: string | null
+          is_superadmin: boolean
+          linkedin: string | null
+          phone: string | null
+          photo_url: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          about?: string | null
+          about_company?: string | null
+          city?: string | null
+          company?: string | null
+          company_founded_year?: number | null
+          created_at?: string
+          designation?: string | null
           email?: string | null
           full_name?: string
-          id?: string
+          id: string
+          industry?: string | null
           is_superadmin?: boolean
+          linkedin?: string | null
           phone?: string | null
           photo_url?: string | null
           updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          about?: string | null
+          about_company?: string | null
+          city?: string | null
+          company?: string | null
+          company_founded_year?: number | null
+          created_at?: string
+          designation?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          industry?: string | null
+          is_superadmin?: boolean
+          linkedin?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -546,6 +652,10 @@ export type Database = {
         Args: { p_focus_area_id: string }
         Returns: boolean
       }
+      owns_note: {
+        Args: { p_note_id: string }
+        Returns: boolean
+      }
       owns_spoke: {
         Args: { p_spoke_id: string }
         Returns: boolean
@@ -567,6 +677,7 @@ export type Database = {
       meeting_status: "Scheduled" | "Completed" | "Cancelled"
       member_role: "chairman" | "director"
       member_state: "active" | "inactive"
+      note_file_kind: "inline" | "attachment"
       plan_status: "Active" | "Completed" | "Dropped"
       task_status:
         | "Not Started"

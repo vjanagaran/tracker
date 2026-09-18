@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
 import { useRef, useState } from "react";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { removeProfilePhoto, saveProfilePhotoUrl, updateProfile } from "./actions";
 import {
@@ -84,8 +86,8 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
       }
 
       const { data: publicUrl } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-      const photoUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
-      const result = await saveProfilePhotoUrl(photoUrl);
+      const nextUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+      const result = await saveProfilePhotoUrl(nextUrl);
       if ("error" in result) {
         setPhotoError(result.error);
         return;
@@ -118,7 +120,7 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
   }
 
   return (
-    <div className="flex max-w-md flex-col gap-8">
+    <div className="flex max-w-2xl flex-col gap-8">
       <div className="flex flex-col gap-2">
         <Label>Photo</Label>
         <div className="flex items-center gap-4">
@@ -173,47 +175,108 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="fullName">Name</Label>
-          <Input
-            id="fullName"
-            autoComplete="name"
-            className="min-h-11"
-            {...register("fullName")}
-          />
-          {errors.fullName ? (
-            <p className="text-sm text-destructive">{errors.fullName.message}</p>
-          ) : null}
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field id="fullName" label="Name" error={errors.fullName?.message}>
+            <Input id="fullName" autoComplete="name" className="min-h-11" {...register("fullName")} />
+          </Field>
+          <Field id="designation" label="Designation" error={errors.designation?.message}>
+            <Input
+              id="designation"
+              autoComplete="organization-title"
+              className="min-h-11"
+              {...register("designation")}
+            />
+          </Field>
+          <Field id="company" label="Company" error={errors.company?.message}>
+            <Input
+              id="company"
+              autoComplete="organization"
+              className="min-h-11"
+              {...register("company")}
+            />
+          </Field>
+          <Field id="companyFoundedYear" label="Founded" error={errors.companyFoundedYear?.message}>
+            <Input
+              id="companyFoundedYear"
+              inputMode="numeric"
+              className="min-h-11"
+              {...register("companyFoundedYear")}
+            />
+          </Field>
+          <Field id="industry" label="Industry" error={errors.industry?.message}>
+            <Input id="industry" className="min-h-11" {...register("industry")} />
+          </Field>
+          <Field id="city" label="City" error={errors.city?.message}>
+            <Input id="city" autoComplete="address-level2" className="min-h-11" {...register("city")} />
+          </Field>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            readOnly
-            className="min-h-11 bg-muted"
+
+        <Field id="aboutCompany" label="About the company" error={errors.aboutCompany?.message}>
+          <Textarea
+            id="aboutCompany"
+            rows={4}
+            className="min-h-24"
+            {...register("aboutCompany")}
           />
+        </Field>
+        <Field id="about" label="About you" error={errors.about?.message}>
+          <Textarea id="about" rows={4} className="min-h-24" {...register("about")} />
+        </Field>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field id="website" label="Website" error={errors.website?.message}>
+            <Input id="website" inputMode="url" className="min-h-11" {...register("website")} />
+          </Field>
+          <Field id="linkedin" label="LinkedIn" error={errors.linkedin?.message}>
+            <Input id="linkedin" inputMode="url" className="min-h-11" {...register("linkedin")} />
+          </Field>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              readOnly
+              className="min-h-11 bg-muted"
+            />
+          </div>
+          <Field id="phone" label="Phone" error={errors.phone?.message}>
+            <Input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              className="min-h-11"
+              {...register("phone")}
+            />
+          </Field>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input
-            id="phone"
-            type="tel"
-            autoComplete="tel"
-            className="min-h-11"
-            {...register("phone")}
-          />
-          {errors.phone ? (
-            <p className="text-sm text-destructive">{errors.phone.message}</p>
-          ) : null}
-        </div>
+
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         {saved ? <p className="text-sm text-muted-foreground">Profile saved.</p> : null}
-        <Button type="submit" className="min-h-11 px-4" disabled={isSubmitting}>
+        <Button type="submit" className="min-h-11 w-fit px-4" disabled={isSubmitting}>
           {isSubmitting ? "Saving profile" : "Save profile"}
         </Button>
       </form>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }

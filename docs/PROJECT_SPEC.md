@@ -38,12 +38,12 @@ board sees two numbers per member: finished since the last meeting, and open now
 
 1. **All ratings are self-rated.** Nothing is derived, averaged or rolled up. The
    WOB wheel never computes the Business spoke on the WOL wheel.
-2. **Wheels, plans and tasks belong to the person, not the board.** A member on
-   two boards has one WOL, one WOB and one task list. Moving between boards
-   carries the full history.
-3. **Everything below `wheels` is private.** No member, chairman or superadmin
-   can read another person's wheels, scores, plans or tasks. Sharing happens by
-   screen share, in the moment, under the member's control.
+2. **Wheels, plans, tasks and notes belong to the person, not the board.** A member on
+   two boards has one WOL, one WOB, one task list and one notes store. Moving
+   between boards carries the full history.
+3. **Everything below `wheels`, plus notes, is private.** No member, chairman or
+   superadmin can read another person's wheels, scores, plans, tasks or notes.
+   Sharing happens by screen share, in the moment, under the member's control.
 4. **Boards are independent tenants.** Any number of them, no data crossing.
 
 ---
@@ -66,6 +66,7 @@ Migrations are in `supabase/migrations/`. Read them before touching the schema.
 
 ```
 profiles          one per auth user; the only shared personal data
+                  name, photo, phone, email, role, company, city, about, links
 boards            tenant. name, cadence_days, meeting_weekday
 board_members     roster. role, status, joined_on, left_on
 meetings          calendar per board; agenda (planned topics) and notes
@@ -80,13 +81,19 @@ action_plans      description + challenge (one pair), status
 
 tasks             title, tag, status, planned_start_on, target_on, completed_on
 task_action_plans many-to-many, optional
-task_notes        append-only
+task_notes        append-only, specific to that task
+
+notes             personal documents; title, rich body. No task/board/spoke link
+note_files        inline images and attached files for a note
 ```
 
-Avatars live in a private `avatars` storage bucket, not in a table. Profile
+Avatars live in a public `avatars` storage bucket, not in a table. Profile
 `photo_url` points at the object. Member photos may appear on the board
 velocity table because `profiles` is shared board data; they never come from
 `board_velocity`.
+
+Note images and attachments live in a **private** `notes` bucket. Paths are
+`{user_id}/{note_id}/{file_id}`. Only the owner can read them.
 
 ### Rules the database enforces, not the UI
 
@@ -95,7 +102,7 @@ velocity table because `profiles` is shared board data; they never come from
   raises. Set `is_active = false` instead, so old cycles keep rendering.
 - `tasks.completed_on` is stamped by a trigger on status change and cleared when
   status moves away from Completed. Never write it from the client.
-- Row-level security keys everything below `wheels` to `user_id = auth.uid()`.
+- Row-level security keys wheels, plans, tasks and notes to `user_id = auth.uid()`.
 
 ### The one deliberate RLS bypass
 
@@ -186,12 +193,15 @@ app/
     reset-password/page.tsx
   (app)/
     layout.tsx                  shell: sidebar on desktop, bottom tabs on mobile
-    profile/page.tsx            name, phone, photo, sign out
+    profile/page.tsx            edit own profile
+    people/[userId]/page.tsx    co-member profile, read-only
     wheel/
       [type]/page.tsx           type = life | business — wheel + score table
       [type]/cycles/page.tsx    cycle list, new cycle, compare two
     spoke/[spokeId]/page.tsx    focus areas + action plans + challenges
     tasks/page.tsx              the to-do list
+    notes/page.tsx              personal documents
+    notes/[noteId]/page.tsx     one note, rich text and files
     boards/page.tsx             boards this member belongs to
     boards/[boardId]/page.tsx   counts dashboard + meeting calendar
   (admin)/
@@ -240,13 +250,23 @@ disclosure.
 This screen is shared on a call, so it must be legible at a distance: generous
 row height, no truncation of task titles, no horizontal scroll on a laptop.
 
+### Notes (`/notes`, `/notes/[noteId]`)
+Private document store. Unlinked from tasks, spokes and boards. List on the
+left, editor on the right. Rich text, inline images, and file attachments.
+Empty copy: **Personal documents stay here.** Task notes stay on the task.
+
+On mobile the list is the screen; open a note for the editor. Desktop sidebar
+places Notes next to Tasks. Mobile tabs: Tasks · Notes · Wheel · Board. Wheel
+is Life and Business with an in-page switch.
+
 ### Board (`/boards/[boardId]`)
 The counts table from `board_velocity`, plus the meeting calendar. Window
 defaults to the last meeting → the next one, via `meeting_window`. The chairman
 adds and moves meetings and edits the agenda.
 
-### Profile (`/profile`)
-Name, phone, photo. Sign out lives here.
+### Profile (`/profile`, `/people/[userId]`)
+Edit your own: name, photo, role, company, city, about, links, phone.
+Co-members open `/people/[userId]` to read it. Sign out lives on the edit page.
 
 ### Cycles (`/wheel/[type]/cycles`)
 List of cycles, latest first. Select any two to overlay. Open a past cycle to
@@ -269,8 +289,8 @@ phone between meetings and share a laptop screen during them.
   session is a privacy breach.
 - Offline fallback page that states plainly what is unavailable and what still
   works.
-- Touch targets 44px minimum. Bottom tab bar on mobile: Tasks · Life · Business
-  · Board. Sidebar on desktop.
+- Touch targets 44px minimum. Bottom tab bar on mobile: Tasks · Notes · Wheel
+  · Board. Sidebar on desktop: Tasks, Notes, Life, Business, Board.
 - Score entry uses a stepper, never a free-text number field — it is a 0–10
   value and the keyboard is the wrong tool.
 

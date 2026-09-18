@@ -334,6 +334,46 @@ async function main() {
       throw new Error("B could not add a note");
     }
 
+    const { data: document, error: documentError } = await asB
+      .from("notes")
+      .insert({
+        user_id: ids.b,
+        title: "Passport scan",
+        body_text: "Renewal date",
+      })
+      .select("id")
+      .single();
+    ownerOk(
+      "B can write own notes",
+      Boolean(document && !documentError),
+      documentError?.message ?? "inserted",
+    );
+    if (!document) {
+      throw new Error("B could not add a personal note");
+    }
+
+    const { data: noteFile, error: noteFileError } = await asB
+      .from("note_files")
+      .insert({
+        id: crypto.randomUUID(),
+        note_id: document.id,
+        kind: "attachment",
+        original_name: "passport.pdf",
+        mime_type: "application/pdf",
+        size_bytes: 1200,
+        storage_path: `${ids.b}/${document.id}/file`,
+      })
+      .select("id")
+      .single();
+    ownerOk(
+      "B can write own note files",
+      Boolean(noteFile && !noteFileError),
+      noteFileError?.message ?? "inserted",
+    );
+    if (!noteFile) {
+      throw new Error("B could not add a note file");
+    }
+
     const { data: aWheels } = await asA.from("wheels").select("id, type");
     const aWol = aWheels?.find((row) => row.type === "WOL");
     const aWob = aWheels?.find((row) => row.type === "WOB");
@@ -403,6 +443,16 @@ async function main() {
         table: "task_notes" as const,
         filter: { column: "id", value: note.id },
         update: { note: "Hijacked" },
+      },
+      {
+        table: "notes" as const,
+        filter: { column: "id", value: document.id },
+        update: { title: "Hijacked" },
+      },
+      {
+        table: "note_files" as const,
+        filter: { column: "id", value: noteFile.id },
+        update: { original_name: "stolen.pdf" },
       },
     ];
 
@@ -476,6 +526,25 @@ async function main() {
     deniedWrite(
       "A cannot insert a note on B's task",
       await asA.from("task_notes").insert({ task_id: task.id, note: "Stolen" }).select(),
+    );
+    deniedWrite(
+      "A cannot insert a personal note for B",
+      await asA.from("notes").insert({ user_id: ids.b, title: "Stolen" }).select(),
+    );
+    deniedWrite(
+      "A cannot attach a file to B's note",
+      await asA
+        .from("note_files")
+        .insert({
+          id: crypto.randomUUID(),
+          note_id: document.id,
+          kind: "attachment",
+          original_name: "stolen.pdf",
+          mime_type: "application/pdf",
+          size_bytes: 10,
+          storage_path: `${ids.a}/${document.id}/stolen`,
+        })
+        .select(),
     );
     deniedWrite(
       "A cannot link B's task to a plan",

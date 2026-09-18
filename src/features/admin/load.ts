@@ -90,7 +90,7 @@ export async function loadAdminBoard(
 
   const { data: memberRows, error: memberError } = await supabase
     .from("board_members")
-    .select("id, user_id, role, status, joined_on, left_on, profiles(full_name)")
+    .select("id, user_id, role, status, joined_on, left_on, profiles(full_name, email)")
     .eq("board_id", boardId)
     .order("joined_on", { ascending: true });
 
@@ -104,6 +104,7 @@ export async function loadAdminBoard(
     id: row.id,
     userId: row.user_id,
     fullName: row.profiles?.full_name ?? "",
+    email: row.profiles?.email || memberAuthInfo.get(row.user_id)?.email || "",
     role: row.role,
     status: row.status,
     joinedOn: row.joined_on,

@@ -147,6 +147,7 @@ export function RosterTable({
           <thead>
             <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
               <th className="px-3 py-3">Name</th>
+              <th className="px-3 py-3">Email</th>
               <th className="w-[160px] px-3 py-3">Role</th>
               <th className="w-[140px] px-3 py-3">Status</th>
               <th className="px-3 py-3">Invitation</th>
@@ -159,6 +160,9 @@ export function RosterTable({
             {members.map((member) => (
               <tr key={member.id} className="border-b border-border last:border-b-0">
                 <td className="px-3 py-3 text-sm">{member.fullName || "Unnamed"}</td>
+                <td className="px-3 py-3 text-sm break-all text-muted-foreground">
+                  {member.email || "—"}
+                </td>
                 <td className="px-3 py-3">
                   <Select
                     value={member.role}
@@ -233,6 +237,9 @@ export function RosterTable({
             <p className="mb-2 text-sm font-medium">
               {member.fullName || "Unnamed"} · {roleLabel(member.role)}
             </p>
+            {member.email ? (
+              <p className="mb-2 text-sm break-all text-muted-foreground">{member.email}</p>
+            ) : null}
             <div className="flex flex-col gap-2">
               <Select
                 value={member.role}

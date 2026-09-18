@@ -142,6 +142,82 @@
   }
 }
 
+.note-editor .tiptap {
+  min-height: 50vh;
+}
+
+.note-editor[data-mode="view"] .tiptap {
+  min-height: 0;
+}
+
+.note-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.note-editor .tiptap h2 {
+  margin: 1.1rem 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.note-editor .tiptap h3 {
+  margin: 1rem 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.note-editor .tiptap ul {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+
+.note-editor .tiptap ol {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+  list-style: decimal;
+}
+
+.note-editor .tiptap ul[data-type="taskList"] {
+  padding-left: 0;
+  list-style: none;
+}
+
+.note-editor .tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.note-editor .tiptap ul[data-type="taskList"] li label {
+  margin-top: 0.2rem;
+}
+
+.note-editor .tiptap mark {
+  background: var(--accent);
+  color: inherit;
+  border-radius: 0.15rem;
+}
+
+.note-editor .tiptap hr {
+  margin: 1.25rem 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.note-editor .tiptap img.note-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem 0;
+  border-radius: 0.5rem;
+}
+
 @layer components {
   .pb-card {
     @apply rounded-xl border border-border bg-card;

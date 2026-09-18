@@ -19,6 +19,7 @@ import { defaultNewPeriod, formatPeriod, monthInputValue, periodFromMonthInput }
 import { ScoreGrid } from "./score-grid";
 import { SpokeManager } from "./spoke-manager";
 import { useScoreGrid } from "./use-score-grid";
+import { WheelKindSwitch } from "./wheel-kind-switch";
 import { WheelRadar } from "./radar";
 import { WheelSheet } from "./wheel-sheet";
 import type {
@@ -125,6 +126,7 @@ export function WheelWorkspace({
   return (
     <div>
       <header className="mb-8">
+        <WheelKindSwitch slug={slug} />
         <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
           {title}
         </h1>

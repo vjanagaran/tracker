@@ -20,7 +20,7 @@ const withSerwist = withSerwistInit({
           return false;
         }
         if (
-          /^\/(wheel|tasks|boards|spoke|profile|admin|auth)(\/|$)/.test(url) ||
+          /^\/(wheel|tasks|notes|boards|spoke|profile|people|admin|auth)(\/|$)/.test(url) ||
           url.startsWith("/_next/data/")
         ) {
           return false;

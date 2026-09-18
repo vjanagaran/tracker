@@ -15,15 +15,15 @@ and Wheel of Business practice on a fortnightly review cycle. Full detail in
    The business wheel never computes the Business spoke on the life wheel. If a
    feature would compute a score from other scores, stop and ask.
 
-2. **Wheels, plans and tasks belong to the person, not the board.** Never add a
+2. **Wheels, plans, tasks and notes belong to the person, not the board.** Never add a
    `board_id` to `wheels`, `spokes`, `wheel_cycles`, `spoke_scores`,
-   `focus_areas`, `action_plans` or `tasks`. Members carry their history between
-   boards, and that only works because the board does not own it.
+   `focus_areas`, `action_plans`, `tasks`, `notes` or `note_files`. Members carry
+   their history between boards, and that only works because the board does not own it.
 
-3. **Everything below `wheels` is private to its owner.** No member, chairman or
-   superadmin may read another person's wheels, scores, plans or tasks. The only
-   shared surface is: profiles of co-members, the board roster, the meeting
-   calendar, and the counts from `board_velocity`.
+3. **Everything below `wheels`, plus `notes`, is private to its owner.** No member,
+   chairman or superadmin may read another person's wheels, scores, plans, tasks or
+   notes. The only shared surface is: profiles of co-members, the board roster, the
+   meeting calendar, and the counts from `board_velocity`.
 
 4. **`board_velocity` is the only cross-member read**, and it returns counts and
    names only. Never extend it to return titles, tags, dates or links. Never add

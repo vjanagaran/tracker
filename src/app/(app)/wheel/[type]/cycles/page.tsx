@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { WheelKindSwitch } from "@/features/wheel/wheel-kind-switch";
 import { CycleCompareControls } from "@/features/wheel/cycle-compare-controls";
 import { CycleList } from "@/features/wheel/cycle-list";
 import { CycleMovement } from "@/features/wheel/cycle-movement";
@@ -46,6 +47,7 @@ export default async function CyclesPage({ params, searchParams }: CyclesPagePro
   return (
     <div>
       <header className="mb-8">
+        <WheelKindSwitch slug={type as "life" | "business"} />
         <p className="mb-1 text-xs text-muted-foreground">
           {config.label} · movement
         </p>

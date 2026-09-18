@@ -11,7 +11,9 @@ export default async function ProfilePage() {
   const { supabase, user } = await requireUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, phone, photo_url, is_superadmin")
+    .select(
+      "full_name, phone, photo_url, is_superadmin, designation, company, company_founded_year, industry, city, about, about_company, website, linkedin",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -19,8 +21,16 @@ export default async function ProfilePage() {
     <>
       <PageHeader
         title="Profile"
-        description="Name, photo and number are what people on your board can see."
+        description="This is what people on your board can see."
       />
+      <p className="mb-6">
+        <Link
+          href={`/people/${user.id}`}
+          className="text-sm text-primary underline-offset-4 hover:underline"
+        >
+          See how you appear
+        </Link>
+      </p>
       {profile?.is_superadmin ? (
         <p className="mb-6 text-sm">
           <Link href="/admin/boards" className="inline-flex items-center gap-1.5 text-primary">
@@ -41,6 +51,17 @@ export default async function ProfilePage() {
         defaultValues={{
           fullName: profile?.full_name ?? "",
           phone: profile?.phone ?? "",
+          designation: profile?.designation ?? "",
+          company: profile?.company ?? "",
+          companyFoundedYear: profile?.company_founded_year
+            ? String(profile.company_founded_year)
+            : "",
+          industry: profile?.industry ?? "",
+          city: profile?.city ?? "",
+          about: profile?.about ?? "",
+          aboutCompany: profile?.about_company ?? "",
+          website: profile?.website ?? "",
+          linkedin: profile?.linkedin ?? "",
         }}
         initialPhotoUrl={profile?.photo_url ?? null}
         email={user.email ?? ""}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { appNav, isNavActive } from "@/components/app-nav";
+import { isNavActive, mobileNav } from "@/components/app-nav";
 import { cn } from "cn";
 
 export function MobileTabBar() {
@@ -14,8 +14,8 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-4">
-        {appNav.map((item) => {
-          const active = isNavActive(pathname, item.href);
+        {mobileNav.map((item) => {
+          const active = isNavActive(pathname, item);
           return (
             <li key={item.href}>
               <Link
