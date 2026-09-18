@@ -11,7 +11,7 @@ export function InviteSessionGate({ setupSession }: { setupSession: boolean }) {
       return;
     }
     if (!setupSession) {
-      router.replace("/tasks");
+      router.replace("/dashboard");
     }
   }, [setupSession, router]);
 

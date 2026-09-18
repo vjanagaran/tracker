@@ -40,7 +40,7 @@ export async function signIn(
     };
   }
 
-  redirect("/tasks");
+  redirect("/dashboard");
 }
 
 export async function acceptInvite(
@@ -88,7 +88,7 @@ export async function acceptInvite(
     return { error: profileError.message };
   }
 
-  redirect("/tasks");
+  redirect("/dashboard");
 }
 
 export type ForgotPasswordResult = { error: string } | { sent: true };
@@ -173,7 +173,7 @@ export async function resetPassword(
     return { error: error.message };
   }
 
-  redirect("/tasks");
+  redirect("/dashboard");
 }
 
 export async function signOut() {

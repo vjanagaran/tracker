@@ -1,4 +1,12 @@
-import { Activity, Briefcase, ListChecks, NotebookText, Users, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Briefcase,
+  LayoutDashboard,
+  ListChecks,
+  NotebookText,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export type NavItem = {
   href: string;
@@ -8,6 +16,7 @@ export type NavItem = {
 };
 
 export const desktopNav: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/notes", label: "Notes", icon: NotebookText },
   { href: "/wheel/life", label: "Life", icon: Activity },
@@ -16,6 +25,7 @@ export const desktopNav: NavItem[] = [
 ];
 
 export const mobileNav: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/notes", label: "Notes", icon: NotebookText },
   {

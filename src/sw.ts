@@ -16,7 +16,7 @@ function isSupabaseHost(hostname: string) {
 }
 
 function isAppRoute(pathname: string) {
-  return /^\/(wheel|tasks|boards|spoke|profile|admin)(\/|$)/.test(pathname);
+  return /^\/(dashboard|wheel|tasks|notes|boards|spoke|profile|admin)(\/|$)/.test(pathname);
 }
 
 const runtimeCaching: RuntimeCaching[] = [

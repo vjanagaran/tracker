@@ -20,13 +20,20 @@ export type WheelRadarAxis = {
 
 type WheelRadarProps = {
   axes: WheelRadarAxis[];
+  /**
+   * Mini drops the spoke labels and the legend. At dashboard size the text
+   * would be unreadable, and the shape alone is the point. The sr-only table
+   * still carries every score.
+   */
+  variant?: "full" | "mini";
 };
 
 const TODAY = "#1f4e79";
 const YEAR = "#6b93b8";
 const FIVE = "#aab8c4";
 
-export function WheelRadar({ axes }: WheelRadarProps) {
+export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
+  const mini = variant === "mini";
   const count = axes.length;
   if (count === 0) {
     return null;
@@ -107,7 +114,7 @@ export function WheelRadar({ axes }: WheelRadarProps) {
             />
           ) : null}
         </g>
-        {axes.map((axis, index) => {
+        {(mini ? [] : axes).map((axis, index) => {
           const point = labelPoint(index, count);
           return (
             <a
@@ -132,20 +139,22 @@ export function WheelRadar({ axes }: WheelRadarProps) {
           );
         })}
       </svg>
-      <figcaption className="mt-2 flex flex-wrap gap-4 text-xs text-[#6b6357]">
-        <span className="inline-flex items-center gap-1.5">
-          <i className="inline-block w-3.5 border-t-2 border-solid border-[#1f4e79]" />
-          Today
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <i className="inline-block w-3.5 border-t-2 border-solid border-[#6b93b8]" />
-          One year
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <i className="inline-block w-3.5 border-t-2 border-dashed border-[#aab8c4]" />
-          Five years
-        </span>
-      </figcaption>
+      {mini ? null : (
+        <figcaption className="mt-2 flex flex-wrap gap-4 text-xs text-[#6b6357]">
+          <span className="inline-flex items-center gap-1.5">
+            <i className="inline-block w-3.5 border-t-2 border-solid border-[#1f4e79]" />
+            Today
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="inline-block w-3.5 border-t-2 border-solid border-[#6b93b8]" />
+            One year
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="inline-block w-3.5 border-t-2 border-dashed border-[#aab8c4]" />
+            Five years
+          </span>
+        </figcaption>
+      )}
       <table className="sr-only">
         <caption>Wheel scores</caption>
         <thead>

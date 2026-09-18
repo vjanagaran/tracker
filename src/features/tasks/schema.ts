@@ -17,15 +17,35 @@ const taskFields = {
   ]),
   plannedStartOn: dateOnly,
   targetOn: dateOnly,
+  repeatEvery: z.enum(["daily", "weekly", "fortnightly", "monthly"]).nullable().optional(),
+  repeatUntil: dateOnly,
   planIds: z.array(z.string().uuid()).optional(),
 };
 
-export const createTaskSchema = z.object(taskFields);
+function withRepeatRule<T extends z.ZodType>(schema: T) {
+  return schema.superRefine((value: z.infer<T>, ctx) => {
+    const data = value as {
+      repeatEvery?: string | null;
+      targetOn?: string | null;
+    };
+    if (data.repeatEvery && !data.targetOn) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["targetOn"],
+        message: "A repeating task needs a finish-by date.",
+      });
+    }
+  });
+}
 
-export const updateTaskSchema = z.object({
-  id: z.string().uuid(),
-  ...taskFields,
-});
+export const createTaskSchema = withRepeatRule(z.object(taskFields));
+
+export const updateTaskSchema = withRepeatRule(
+  z.object({
+    id: z.string().uuid(),
+    ...taskFields,
+  }),
+);
 
 export const updateTaskStatusSchema = z.object({
   id: z.string().uuid(),

@@ -3,19 +3,32 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
 import type { Database } from "@/lib/database.types";
+import { TASK_COLUMNS, mapTaskRow } from "./load";
+import { OPEN_STATUSES, type TaskItem, type TaskNote } from "./types";
 import {
   addTaskNoteSchema,
   createTaskSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
 } from "./schema";
-import type { TaskItem, TaskNote } from "./types";
 
 type TaskInsert = Omit<Database["public"]["Tables"]["tasks"]["Insert"], "completed_on">;
 type TaskUpdate = Omit<Database["public"]["Tables"]["tasks"]["Update"], "completed_on">;
 
-export type TaskActionResult = { error: string } | { ok: true; task: TaskItem };
+export type TaskActionResult =
+  | { error: string }
+  | { ok: true; task: TaskItem; spawned?: TaskItem };
 export type NoteActionResult = { error: string } | { ok: true; note: TaskNote };
+
+function writeError(message: string | undefined, fallback: string) {
+  if (!message) {
+    return fallback;
+  }
+  if (message.includes("tasks_repeat_needs_target")) {
+    return "A repeating task needs a finish-by date.";
+  }
+  return message;
+}
 
 function emptyToNull(value: string | null | undefined) {
   if (!value) {
@@ -26,6 +39,60 @@ function emptyToNull(value: string | null | undefined) {
 
 function refreshTasks() {
   revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+}
+
+function repeatFields(data: {
+  repeatEvery?: TaskItem["repeatEvery"];
+  repeatUntil?: string | null;
+}) {
+  const repeatEvery = data.repeatEvery ?? null;
+  return {
+    repeat_every: repeatEvery,
+    repeat_until: repeatEvery ? emptyToNull(data.repeatUntil) : null,
+  };
+}
+
+async function loadTaskNotes(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  taskId: string,
+): Promise<{ error: string } | { notes: TaskNote[] }> {
+  const { data, error } = await supabase
+    .from("task_notes")
+    .select("id, note, created_at")
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return { error: error.message };
+  }
+  return {
+    notes: (data ?? []).map((note) => ({
+      id: note.id,
+      note: note.note,
+      createdAt: note.created_at,
+    })),
+  };
+}
+
+async function loadSpawnedOccurrence(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  seriesId: string,
+  completedId: string,
+  planIds: string[],
+): Promise<TaskItem | undefined> {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(TASK_COLUMNS)
+    .eq("series_id", seriesId)
+    .neq("id", completedId)
+    .in("status", OPEN_STATUSES)
+    .maybeSingle();
+
+  if (error || !data) {
+    return undefined;
+  }
+  return mapTaskRow(data, planIds, []);
 }
 
 async function assertOwnedPlans(
@@ -101,15 +168,16 @@ export async function createTask(input: unknown): Promise<TaskActionResult> {
     status: parsed.data.status,
     planned_start_on: emptyToNull(parsed.data.plannedStartOn),
     target_on: emptyToNull(parsed.data.targetOn),
+    ...repeatFields(parsed.data),
   } satisfies TaskInsert;
   const { data, error } = await supabase
     .from("tasks")
     .insert(row)
-    .select("id, title, tag, status, planned_start_on, target_on, completed_on")
+    .select(TASK_COLUMNS)
     .single();
 
   if (error || !data) {
-    return { error: error?.message ?? "The task could not be added." };
+    return { error: writeError(error?.message, "The task could not be added.") };
   }
 
   const links = await replacePlanLinks(supabase, data.id, parsed.data.planIds ?? []);
@@ -120,17 +188,7 @@ export async function createTask(input: unknown): Promise<TaskActionResult> {
   refreshTasks();
   return {
     ok: true,
-    task: {
-      id: data.id,
-      title: data.title,
-      tag: data.tag,
-      status: data.status,
-      plannedStartOn: data.planned_start_on,
-      targetOn: data.target_on,
-      completedOn: data.completed_on,
-      planIds: parsed.data.planIds ?? [],
-      notes: [],
-    },
+    task: mapTaskRow(data, parsed.data.planIds ?? [], []),
   };
 }
 
@@ -147,16 +205,17 @@ export async function updateTask(input: unknown): Promise<TaskActionResult> {
     status: parsed.data.status,
     planned_start_on: emptyToNull(parsed.data.plannedStartOn),
     target_on: emptyToNull(parsed.data.targetOn),
+    ...repeatFields(parsed.data),
   } satisfies TaskUpdate;
   const { data, error } = await supabase
     .from("tasks")
     .update(row)
     .eq("id", parsed.data.id)
-    .select("id, title, tag, status, planned_start_on, target_on, completed_on")
+    .select(TASK_COLUMNS)
     .single();
 
   if (error || !data) {
-    return { error: error?.message ?? "The task could not be saved." };
+    return { error: writeError(error?.message, "The task could not be saved.") };
   }
 
   const links = await replacePlanLinks(supabase, data.id, parsed.data.planIds ?? []);
@@ -164,34 +223,15 @@ export async function updateTask(input: unknown): Promise<TaskActionResult> {
     return { error: links.error };
   }
 
-  const { data: notes, error: notesError } = await supabase
-    .from("task_notes")
-    .select("id, note, created_at")
-    .eq("task_id", data.id)
-    .order("created_at", { ascending: true });
-
-  if (notesError) {
-    return { error: notesError.message };
+  const notes = await loadTaskNotes(supabase, data.id);
+  if ("error" in notes) {
+    return { error: notes.error };
   }
 
   refreshTasks();
   return {
     ok: true,
-    task: {
-      id: data.id,
-      title: data.title,
-      tag: data.tag,
-      status: data.status,
-      plannedStartOn: data.planned_start_on,
-      targetOn: data.target_on,
-      completedOn: data.completed_on,
-      planIds: parsed.data.planIds ?? [],
-      notes: (notes ?? []).map((note) => ({
-        id: note.id,
-        note: note.note,
-        createdAt: note.created_at,
-      })),
-    },
+    task: mapTaskRow(data, parsed.data.planIds ?? [], notes.notes),
   };
 }
 
@@ -209,7 +249,7 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
     .from("tasks")
     .update(row)
     .eq("id", parsed.data.id)
-    .select("id, title, tag, status, planned_start_on, target_on, completed_on")
+    .select(TASK_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -228,25 +268,24 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
       .eq("task_id", data.id),
   ]);
 
+  const planIds = (links ?? []).map((link) => link.action_plan_id);
+  const task = mapTaskRow(
+    data,
+    planIds,
+    (notes ?? []).map((note) => ({
+      id: note.id,
+      note: note.note,
+      createdAt: note.created_at,
+    })),
+  );
+
+  const spawned =
+    task.status === "Completed" && task.repeatEvery
+      ? await loadSpawnedOccurrence(supabase, task.seriesId, task.id, planIds)
+      : undefined;
+
   refreshTasks();
-  return {
-    ok: true,
-    task: {
-      id: data.id,
-      title: data.title,
-      tag: data.tag,
-      status: data.status,
-      plannedStartOn: data.planned_start_on,
-      targetOn: data.target_on,
-      completedOn: data.completed_on,
-      planIds: (links ?? []).map((link) => link.action_plan_id),
-      notes: (notes ?? []).map((note) => ({
-        id: note.id,
-        note: note.note,
-        createdAt: note.created_at,
-      })),
-    },
-  };
+  return { ok: true, task, spawned };
 }
 
 export async function addTaskNote(input: unknown): Promise<NoteActionResult> {

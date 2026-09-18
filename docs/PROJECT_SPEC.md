@@ -79,7 +79,8 @@ spoke_scores      (cycle_id, spoke_id) score_now, target_1y, target_5y — nulla
 focus_areas       current_issue, goal_1y, goal_5y
 action_plans      description + challenge (one pair), status
 
-tasks             title, tag, status, planned_start_on, target_on, completed_on
+tasks             title, tag, status, planned_start_on, target_on, completed_on,
+                  repeat_every, repeat_until, series_id
 task_action_plans many-to-many, optional
 task_notes        append-only, specific to that task
 
@@ -102,6 +103,9 @@ Note images and attachments live in a **private** `notes` bucket. Paths are
   raises. Set `is_active = false` instead, so old cycles keep rendering.
 - `tasks.completed_on` is stamped by a trigger on status change and cleared when
   status moves away from Completed. Never write it from the client.
+- A repeating task must have `target_on`. Completing it inserts the next
+  occurrence of the same series — one at a time, so the open count stays honest.
+  Never write `series_id` from the client; a trigger stamps it.
 - Row-level security keys wheels, plans, tasks and notes to `user_id = auth.uid()`.
 
 ### The one deliberate RLS bypass
@@ -193,6 +197,7 @@ app/
     reset-password/page.tsx
   (app)/
     layout.tsx                  shell: sidebar on desktop, bottom tabs on mobile
+    dashboard/page.tsx          the landing screen; what is due and what is unrated
     profile/page.tsx            edit own profile
     people/[userId]/page.tsx    co-member profile, read-only
     wheel/
@@ -226,6 +231,29 @@ The wireframe at `docs/wireframe.html` shows all of these. Open it before
 building any screen; it is the agreed design, and the copy in it is the agreed
 copy.
 
+### Dashboard (`/dashboard`)
+Where a signed-in member lands. A launcher and a state of play, never a
+scorecard: no wheel average, no completion percentage, nobody else's content.
+No page header — the cards name themselves, and the screen should open on
+content rather than on a title explaining it.
+
+Five cards. Next meeting, with the member's own two counts read from
+`board_velocity` so the dashboard cannot disagree with the board. Hidden when
+the member sits on no board — a personal day should not open on the absence of
+a group. Tasks, bucketed due today first, then overdue, then the next seven
+days. Wheels, one mini radar each with the latest cycle's period. Recent notes.
+And **needs a plan** — a spoke the member scored 4 or below in their latest
+cycle with no action plan still Active.
+
+That last card is close to the nudges rejected in section 9, and the line is
+this: it is a static filter over the member's own ratings, shown only when they
+open the screen. It never chases them, never mentions time elapsed, and never
+implies a target.
+
+Which day is "today" belongs to the member's clock, not the server's. The task
+buckets are computed twice — once on the server for the first paint, once in the
+browser through `todayStore` — so a member in any zone sees their own day.
+
 ### Wheel (`/wheel/life`, `/wheel/business`)
 Radar SVG on the left, score grid on the right. Three polygons: today (filled,
 solid), one year (solid line), five years (dashed). Below: the cycle this
@@ -243,9 +271,10 @@ then action plans as rows with their paired challenge. Inline add for both.
 
 ### Tasks (`/tasks`)
 Open items sorted by `target_on` ascending. Columns: title, tag, what it works
-toward, target date, status. Status is an inline control — changing it saves
-immediately and optimistically. Completed and cancelled items live behind a
-disclosure.
+toward, target date, status. Repeat (daily, weekly, fortnightly, monthly) is
+optional; a repeating task needs a finish-by date. Completing it creates the
+next occurrence. Status is an inline control — changing it saves immediately
+and optimistically. Completed and cancelled items live behind a disclosure.
 
 This screen is shared on a call, so it must be legible at a distance: generous
 row height, no truncation of task titles, no horizontal scroll on a laptop.
@@ -256,8 +285,8 @@ left, editor on the right. Rich text, inline images, and file attachments.
 Empty copy: **Personal documents stay here.** Task notes stay on the task.
 
 On mobile the list is the screen; open a note for the editor. Desktop sidebar
-places Notes next to Tasks. Mobile tabs: Tasks · Notes · Wheel · Board. Wheel
-is Life and Business with an in-page switch.
+places Notes next to Tasks. Mobile tabs: Dashboard · Tasks · Notes · Wheel · Board.
+Wheel is Life and Business with an in-page switch.
 
 ### Board (`/boards/[boardId]`)
 The counts table from `board_velocity`, plus the meeting calendar. Window
@@ -289,8 +318,8 @@ phone between meetings and share a laptop screen during them.
   session is a privacy breach.
 - Offline fallback page that states plainly what is unavailable and what still
   works.
-- Touch targets 44px minimum. Bottom tab bar on mobile: Tasks · Notes · Wheel
-  · Board. Sidebar on desktop: Tasks, Notes, Life, Business, Board.
+- Touch targets 44px minimum. Bottom tab bar on mobile: Dashboard · Tasks · Notes ·
+  Wheel · Board. Sidebar on desktop: Dashboard, Tasks, Notes, Life, Business, Board.
 - Score entry uses a stepper, never a free-text number field — it is a 0–10
   value and the keyboard is the wrong tool.
 

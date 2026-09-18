@@ -490,6 +490,9 @@ export type Database = {
           created_at: string
           id: string
           planned_start_on: string | null
+          repeat_every: Database["public"]["Enums"]["task_repeat"] | null
+          repeat_until: string | null
+          series_id: string
           status: Database["public"]["Enums"]["task_status"]
           tag: Database["public"]["Enums"]["task_tag"] | null
           target_on: string | null
@@ -502,6 +505,9 @@ export type Database = {
           created_at?: string
           id?: string
           planned_start_on?: string | null
+          repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
+          repeat_until?: string | null
+          series_id?: string
           status?: Database["public"]["Enums"]["task_status"]
           tag?: Database["public"]["Enums"]["task_tag"] | null
           target_on?: string | null
@@ -514,6 +520,9 @@ export type Database = {
           created_at?: string
           id?: string
           planned_start_on?: string | null
+          repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
+          repeat_until?: string | null
+          series_id?: string
           status?: Database["public"]["Enums"]["task_status"]
           tag?: Database["public"]["Enums"]["task_tag"] | null
           target_on?: string | null
@@ -679,6 +688,7 @@ export type Database = {
       member_state: "active" | "inactive"
       note_file_kind: "inline" | "attachment"
       plan_status: "Active" | "Completed" | "Dropped"
+      task_repeat: "daily" | "weekly" | "fortnightly" | "monthly"
       task_status:
         | "Not Started"
         | "Work in Progress"

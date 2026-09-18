@@ -23,7 +23,7 @@ export function useTasks(initialTasks: TaskItem[]) {
       if ("error" in result) {
         throw new Error(result.error);
       }
-      return result.task;
+      return result;
     },
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: taskQueryKey });
@@ -50,8 +50,11 @@ export function useTasks(initialTasks: TaskItem[]) {
         queryClient.setQueryData(taskQueryKey, context.previous);
       }
     },
-    onSuccess: (task) => {
-      upsertTask(task);
+    onSuccess: (result) => {
+      upsertTask(result.task);
+      if (result.spawned) {
+        upsertTask(result.spawned);
+      }
     },
   });
 

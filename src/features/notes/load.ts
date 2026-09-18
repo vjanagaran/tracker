@@ -6,12 +6,22 @@ import type { NoteDetail, NoteFile, NoteListItem } from "./types";
 
 type Client = SupabaseClient<Database>;
 
-export async function loadNoteList(client: Client, userId: string): Promise<NoteListItem[]> {
-  const { data, error } = await client
+export async function loadNoteList(
+  client: Client,
+  userId: string,
+  limit?: number,
+): Promise<NoteListItem[]> {
+  let query = client
     .from("notes")
     .select("id, title, body_text, updated_at")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+
+  if (limit != null) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);

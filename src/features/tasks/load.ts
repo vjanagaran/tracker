@@ -4,6 +4,44 @@ import type { PlanOption, TaskItem, TaskNote } from "./types";
 
 type Client = SupabaseClient<Database>;
 
+export const TASK_COLUMNS =
+  "id, title, tag, status, planned_start_on, target_on, completed_on, repeat_every, repeat_until, series_id" as const;
+
+type TaskRow = Pick<
+  Database["public"]["Tables"]["tasks"]["Row"],
+  | "id"
+  | "title"
+  | "tag"
+  | "status"
+  | "planned_start_on"
+  | "target_on"
+  | "completed_on"
+  | "repeat_every"
+  | "repeat_until"
+  | "series_id"
+>;
+
+export function mapTaskRow(
+  row: TaskRow,
+  planIds: string[] = [],
+  notes: TaskNote[] = [],
+): TaskItem {
+  return {
+    id: row.id,
+    title: row.title,
+    tag: row.tag,
+    status: row.status,
+    plannedStartOn: row.planned_start_on,
+    targetOn: row.target_on,
+    completedOn: row.completed_on,
+    repeatEvery: row.repeat_every,
+    repeatUntil: row.repeat_until,
+    seriesId: row.series_id,
+    planIds,
+    notes,
+  };
+}
+
 export type TaskWorkspaceData = {
   tasks: TaskItem[];
   plans: PlanOption[];
@@ -23,7 +61,7 @@ export async function loadTaskWorkspace(
 async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> {
   const { data: rows, error } = await supabase
     .from("tasks")
-    .select("id, title, tag, status, planned_start_on, target_on, completed_on")
+    .select(TASK_COLUMNS)
     .eq("user_id", userId);
 
   if (error) {
@@ -72,17 +110,9 @@ async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> 
     }
   }
 
-  return (rows ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    tag: row.tag,
-    status: row.status,
-    plannedStartOn: row.planned_start_on,
-    targetOn: row.target_on,
-    completedOn: row.completed_on,
-    planIds: plansByTask.get(row.id) ?? [],
-    notes: notesByTask.get(row.id) ?? [],
-  }));
+  return (rows ?? []).map((row) =>
+    mapTaskRow(row, plansByTask.get(row.id) ?? [], notesByTask.get(row.id) ?? []),
+  );
 }
 
 async function loadPlanCatalog(

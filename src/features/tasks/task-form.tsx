@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/select";
 import { createTask, updateTask } from "./actions";
 import { PlanPicker } from "./plan-picker";
-import { tagLabel } from "./labels";
+import { repeatLabel, tagLabel } from "./labels";
 import {
+  TASK_REPEATS,
   TASK_STATUSES,
   TASK_TAGS,
   type PlanOption,
   type TaskItem,
+  type TaskRepeat,
   type TaskStatus,
   type TaskTag,
 } from "./types";
@@ -36,6 +38,7 @@ export function TaskForm({ plans, task, onSaved, onCancel }: TaskFormProps) {
   const [tag, setTag] = useState<TaskTag | null>(task?.tag ?? null);
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "Not Started");
   const [planIds, setPlanIds] = useState<string[]>(task?.planIds ?? []);
+  const [repeatEvery, setRepeatEvery] = useState<TaskRepeat | null>(task?.repeatEvery ?? null);
 
   async function onSubmit(formData: FormData) {
     setPending(true);
@@ -46,6 +49,8 @@ export function TaskForm({ plans, task, onSaved, onCancel }: TaskFormProps) {
       status,
       plannedStartOn: String(formData.get("plannedStartOn") ?? ""),
       targetOn: String(formData.get("targetOn") ?? ""),
+      repeatEvery,
+      repeatUntil: String(formData.get("repeatUntil") ?? ""),
       planIds,
     };
     const result = task
@@ -89,10 +94,48 @@ export function TaskForm({ plans, task, onSaved, onCancel }: TaskFormProps) {
             id="targetOn"
             name="targetOn"
             type="date"
+            required={repeatEvery != null}
             defaultValue={task?.targetOn ?? ""}
             className="min-h-11"
           />
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="repeatEvery">Repeat</Label>
+          <Select
+            value={repeatEvery ?? "none"}
+            onValueChange={(value) =>
+              setRepeatEvery(value && value !== "none" ? (value as TaskRepeat) : null)
+            }
+          >
+            <SelectTrigger id="repeatEvery" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Does not repeat</SelectItem>
+              {TASK_REPEATS.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {repeatLabel(value)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {repeatEvery ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="repeatUntil">Until</Label>
+            <Input
+              id="repeatUntil"
+              name="repeatUntil"
+              type="date"
+              defaultValue={task?.repeatUntil ?? ""}
+              className="min-h-11"
+            />
+            <p className="text-xs text-muted-foreground">Leave blank to keep going.</p>
+          </div>
+        ) : null}
       </div>
 
       <fieldset>

@@ -10,14 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  formatTarget,
-  openCounts,
-  sortClosed,
-  sortOpen,
-  tagLabel,
-  workingToward,
-} from "./labels";
+import { formatTarget, openCounts, repeatLabel, sortClosed, sortOpen, tagLabel, workingToward } from "./labels";
 import { TASK_STATUSES, isOpenStatus, type PlanOption, type TaskItem, type TaskStatus } from "./types";
 
 const statusTone: Record<TaskStatus, BadgeTone> = {
@@ -148,7 +141,7 @@ function TaskRow({
   onNotes: (taskId: string) => void;
   onStatus: (taskId: string, status: TaskStatus) => void;
 }) {
-  const meta = [tagLabel(task.tag), workingToward(task, plans)].filter(
+  const meta = [tagLabel(task.tag), workingToward(task, plans), repeatLabel(task.repeatEvery)].filter(
     (part) => part !== "—",
   );
 

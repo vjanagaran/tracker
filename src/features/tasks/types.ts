@@ -2,6 +2,7 @@ import type { Enums } from "@/lib/database.types";
 
 export type TaskStatus = Enums<"task_status">;
 export type TaskTag = Enums<"task_tag">;
+export type TaskRepeat = Enums<"task_repeat">;
 
 export const TASK_STATUSES: TaskStatus[] = [
   "Not Started",
@@ -22,6 +23,8 @@ export const OPEN_STATUSES: TaskStatus[] = [
 export const CLOSED_STATUSES: TaskStatus[] = ["Completed", "Cancelled"];
 
 export const TASK_TAGS: TaskTag[] = ["WOL", "WOB", "OPEN"];
+
+export const TASK_REPEATS: TaskRepeat[] = ["daily", "weekly", "fortnightly", "monthly"];
 
 export type PlanOption = {
   id: string;
@@ -46,6 +49,10 @@ export type TaskItem = {
   targetOn: string | null;
   /** Read from the database only. Never send this on insert or update. */
   completedOn: string | null;
+  repeatEvery: TaskRepeat | null;
+  repeatUntil: string | null;
+  /** First occurrence's id. The database stamps it; never send on insert. */
+  seriesId: string;
   planIds: string[];
   notes: TaskNote[];
 };

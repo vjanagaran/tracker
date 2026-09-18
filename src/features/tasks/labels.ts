@@ -1,6 +1,14 @@
 import { format, parseISO } from "date-fns";
-import type { PlanOption, TaskItem, TaskTag } from "./types";
+import type { PlanOption, TaskItem, TaskRepeat, TaskTag } from "./types";
 import { isOpenStatus } from "./types";
+
+export function repeatLabel(repeat: TaskRepeat | null) {
+  if (repeat === "daily") return "Daily";
+  if (repeat === "weekly") return "Weekly";
+  if (repeat === "fortnightly") return "Fortnightly";
+  if (repeat === "monthly") return "Monthly";
+  return "—";
+}
 
 export function tagLabel(tag: TaskTag | null) {
   if (tag === "WOL") return "Life";

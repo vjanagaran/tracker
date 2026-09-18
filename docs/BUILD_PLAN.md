@@ -3,7 +3,7 @@
 Work the phases in order. Each has a definition of done — do not move on until
 it holds. Read `docs/PROJECT_SPEC.md` first.
 
-**Status (11 Sep 2026):** phases 0–8 are implemented in the repo. Remaining
+**Status (18 Sep 2026):** phases 0–9 are implemented in the repo. Remaining
 work is listed at the bottom; do not reopen a phase without a reason.
 
 ---
@@ -156,6 +156,26 @@ suite; `npx supabase test db` is the pgTAP companion.
 
 **Done when:** the RLS suite passes and a deliberate attempt to read another
 member's data through the client fails on every table.
+
+---
+
+## Phase 9 — Dashboard
+
+- [x] `/dashboard` as the landing screen; every post-auth redirect points at it
+- [x] Dashboard first in the sidebar and in the mobile tab bar
+- [x] Next meeting card reading the member's own row from `board_velocity`
+- [x] Task buckets: due today first, then overdue, then next seven days
+- [x] Mini radar per wheel with the latest cycle's period
+- [x] Needs a plan — rated 4 or below with no active action plan
+- [x] Recent notes
+- [x] Day buckets recomputed in the browser, so "today" is the member's day
+
+No migration, no new `SECURITY DEFINER` function, no change to `board_velocity`.
+Every card reads the member's own rows under the existing policies.
+
+**Done when:** a member with an overdue task, an unrated business wheel and
+three notes sees all of it on one screen, and a member in another timezone sees
+their own day rather than the server's.
 
 ---
 
