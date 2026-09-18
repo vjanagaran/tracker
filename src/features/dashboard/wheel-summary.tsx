@@ -17,9 +17,9 @@ export function WheelSummary({ wheels }: { wheels: DashboardWheel[] }) {
 
   return (
     <DashboardCard title="Wheels">
-      <ul className="grid grid-cols-2 gap-4">
+      <ul className="grid min-w-0 grid-cols-2 gap-3">
         {wheels.map((wheel) => (
-          <li key={wheel.slug}>
+          <li key={wheel.slug} className="min-w-0">
             <WheelBlock wheel={wheel} />
           </li>
         ))}
@@ -30,8 +30,8 @@ export function WheelSummary({ wheels }: { wheels: DashboardWheel[] }) {
 
 function WheelBlock({ wheel }: { wheel: DashboardWheel }) {
   return (
-    <div className="flex h-full flex-col">
-      <div className="mx-auto w-full max-w-[160px]">
+    <div className="flex h-full min-w-0 flex-col">
+      <div className="mx-auto w-full max-w-[160px] min-w-0">
         {wheel.axes.length > 0 ? (
           <WheelRadar axes={wheel.axes} variant="mini" />
         ) : (
@@ -43,7 +43,7 @@ function WheelBlock({ wheel }: { wheel: DashboardWheel }) {
       </div>
       <Link
         href={`/wheel/${wheel.slug}`}
-        className="mt-2 inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline"
+        className="mt-2 inline-flex min-h-11 min-w-0 items-center text-sm break-words text-primary underline-offset-4 hover:underline"
       >
         {wheel.title}
       </Link>

@@ -8,7 +8,7 @@ type DashboardCardProps = {
 
 export function DashboardCard({ title, action, children }: DashboardCardProps) {
   return (
-    <section className="pb-card flex flex-col p-4 md:p-5">
+    <section className="pb-card flex min-w-0 w-full flex-col overflow-hidden p-4 md:p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-medium tracking-tight">{title}</h2>
         {action ? (

@@ -19,7 +19,7 @@ export default async function AppLayout({
   const boards = await loadMemberBoards(supabase, user.id);
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh overflow-x-hidden">
       <SidebarNav
         name={profile?.full_name ?? ""}
         isSuperadmin={profile?.is_superadmin ?? false}
@@ -29,7 +29,7 @@ export default async function AppLayout({
         <MobileHeader name={profile?.full_name ?? ""} />
         <main
           id="main"
-          className="flex-1 px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"
+          className="min-w-0 flex-1 overflow-x-hidden px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"
         >
           <Providers>{children}</Providers>
         </main>

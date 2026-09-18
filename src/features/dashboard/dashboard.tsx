@@ -7,14 +7,14 @@ import type { DashboardView } from "./types";
 
 export function Dashboard({ view }: { view: DashboardView }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 max-w-full flex-col gap-4">
       <MeetingSummary meeting={view.meeting} boardCount={view.boardCount} />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           <TaskSummary tasks={view.tasks} />
           <PlanGaps gaps={view.planGaps} />
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <WheelSummary wheels={view.wheels} />
           <RecentNotes notes={view.notes} />
         </div>

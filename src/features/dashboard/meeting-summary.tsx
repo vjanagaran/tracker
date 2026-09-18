@@ -35,9 +35,9 @@ export function MeetingSummary({
         ].join(" · ");
 
   return (
-    <section className="pb-card p-4 md:p-5">
+    <section className="pb-card min-w-0 w-full p-4 md:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-sm font-medium tracking-tight">
+        <h2 className="min-w-0 text-sm font-medium tracking-tight break-words">
           {meeting.boardName} · {formatMeetingWhen(meeting.scheduledAt)}
         </h2>
         <p className="text-sm text-muted-foreground">{daysAwayLabel(meeting.daysAway)}</p>

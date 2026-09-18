@@ -53,10 +53,14 @@ export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
   );
 
   return (
-    <figure className="w-full">
+    <figure className={mini ? "relative w-full max-w-full overflow-hidden" : "w-full"}>
       <svg
         viewBox={`0 0 ${RADAR_VIEW} ${RADAR_VIEW}`}
-        className="block h-auto w-full overflow-visible"
+        className={
+          mini
+            ? "block h-auto w-full max-w-full"
+            : "block h-auto w-full overflow-visible"
+        }
         role="group"
         aria-label="Wheel"
       >
@@ -155,29 +159,31 @@ export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
           </span>
         </figcaption>
       )}
-      <table className="sr-only">
-        <caption>Wheel scores</caption>
-        <thead>
-          <tr>
-            <th>Spoke</th>
-            <th>Today</th>
-            <th>One year</th>
-            <th>Five years</th>
-          </tr>
-        </thead>
-        <tbody>
-          {axes.map((axis) => (
-            <tr key={axis.id}>
-              <th scope="row">
-                <a href={`/spoke/${axis.id}`}>{axis.name}</a>
-              </th>
-              <td>{axis.today ?? "Not scored"}</td>
-              <td>{axis.oneYear ?? "Not scored"}</td>
-              <td>{axis.fiveYears ?? "Not scored"}</td>
+      {mini ? null : (
+        <table className="sr-only">
+          <caption>Wheel scores</caption>
+          <thead>
+            <tr>
+              <th>Spoke</th>
+              <th>Today</th>
+              <th>One year</th>
+              <th>Five years</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {axes.map((axis) => (
+              <tr key={axis.id}>
+                <th scope="row">
+                  <a href={`/spoke/${axis.id}`}>{axis.name}</a>
+                </th>
+                <td>{axis.today ?? "Not scored"}</td>
+                <td>{axis.oneYear ?? "Not scored"}</td>
+                <td>{axis.fiveYears ?? "Not scored"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </figure>
   );
 }

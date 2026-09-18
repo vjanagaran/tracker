@@ -62,12 +62,12 @@ function TaskGroup({
       <p className="mb-1 text-xs text-muted-foreground">{heading}</p>
       <ul className="divide-y divide-border">
         {shown.map((task) => (
-          <li key={task.id} className="flex items-start gap-3 py-2.5">
+          <li key={task.id} className="flex min-w-0 items-start gap-3 py-2.5">
             <Dot tone={tone} className="mt-2" />
             <span className="min-w-0 flex-1 text-[15px] leading-snug break-words">
               {task.title}
             </span>
-            <span className="shrink-0 text-[13px] whitespace-nowrap text-muted-foreground">
+            <span className="max-w-[45%] shrink-0 text-right text-[13px] text-muted-foreground">
               {[
                 task.tag ? tagLabel(task.tag) : null,
                 task.repeatEvery ? repeatLabel(task.repeatEvery) : null,
