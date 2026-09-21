@@ -1,10 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "next build --webpack",
-  "crons": [
-    {
-      "path": "/api/morning-note",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "buildCommand": "next build --webpack"
 }
