@@ -38,10 +38,24 @@ function isHttpUrl(value: string) {
   }
 }
 
+export function isTimeZone(value: string) {
+  if (!value) {
+    return false;
+  }
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const profileSchema = z
   .object({
     fullName: z.string().trim().min(1, "Enter your name."),
     phone: z.string().max(40).optional(),
+    morningNoteOn: z.boolean(),
+    timezone: z.string(),
     designation: z.string().max(120).optional(),
     company: z.string().max(160).optional(),
     companyFoundedYear: z.string().max(4).optional(),
@@ -80,6 +94,14 @@ export const profileSchema = z
         code: "custom",
         path: ["linkedin"],
         message: "Enter a web address.",
+      });
+    }
+
+    if (value.morningNoteOn && !isTimeZone(value.timezone)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["timezone"],
+        message: "Choose your timezone so the note arrives at 7:00.",
       });
     }
   });

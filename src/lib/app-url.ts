@@ -40,3 +40,11 @@ export function inviteAcceptUrl(headerStore?: Headers) {
 export function resetPasswordUrl(headerStore?: Headers) {
   return `${appOrigin(headerStore)}/reset-password`;
 }
+
+export function dashboardUrl(headerStore?: Headers) {
+  return `${appOrigin(headerStore)}/dashboard`;
+}
+
+export function profileUrl(headerStore?: Headers) {
+  return `${appOrigin(headerStore)}/profile`;
+}

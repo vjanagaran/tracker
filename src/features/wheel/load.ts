@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { tallyPlanTaskCounts } from "./labels";
 import type {
   ComparisonAxis,
   CycleComparison,
@@ -160,12 +161,18 @@ async function loadSheetSpokes(
       throw new Error(planError.message);
     }
 
+    const planIds = (planRows ?? []).map((row) => row.id);
+    const taskCounts = await loadPlanTaskCounts(supabase, planIds);
+
     for (const row of planRows ?? []) {
+      const tally = taskCounts.get(row.id) ?? { completed: 0, total: 0 };
       const list = plansByFocus.get(row.focus_area_id) ?? [];
       list.push({
         id: row.id,
         description: row.description,
         challenge: row.challenge,
+        completedTasks: tally.completed,
+        totalTasks: tally.total,
       });
       plansByFocus.set(row.focus_area_id, list);
     }
@@ -188,6 +195,43 @@ async function loadSheetSpokes(
     ...spoke,
     focusAreas: focusBySpoke.get(spoke.id) ?? [],
   }));
+}
+
+async function loadPlanTaskCounts(supabase: Client, planIds: string[]) {
+  if (planIds.length === 0) {
+    return new Map<string, { completed: number; total: number }>();
+  }
+
+  const { data: links, error: linkError } = await supabase
+    .from("task_action_plans")
+    .select("task_id, action_plan_id")
+    .in("action_plan_id", planIds);
+
+  if (linkError) {
+    throw new Error(linkError.message);
+  }
+
+  const taskIds = [...new Set((links ?? []).map((link) => link.task_id))];
+  if (taskIds.length === 0) {
+    return new Map<string, { completed: number; total: number }>();
+  }
+
+  const { data: tasks, error: taskError } = await supabase
+    .from("tasks")
+    .select("id, status")
+    .in("id", taskIds);
+
+  if (taskError) {
+    throw new Error(taskError.message);
+  }
+
+  const statusById = new Map((tasks ?? []).map((task) => [task.id, task.status]));
+  return tallyPlanTaskCounts(
+    (links ?? []).flatMap((link) => {
+      const status = statusById.get(link.task_id);
+      return status ? [{ actionPlanId: link.action_plan_id, status }] : [];
+    }),
+  );
 }
 
 export function resolveCyclePair(

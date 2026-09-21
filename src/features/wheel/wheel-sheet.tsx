@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ScoreTriple, WheelSheetFocus, WheelSheetSpoke } from "./types";
+import { formatPlanTaskCount } from "./labels";
+import type { ScoreTriple, WheelSheetFocus, WheelSheetPlan, WheelSheetSpoke } from "./types";
 
 type WheelSheetProps = {
   spokes: WheelSheetSpoke[];
@@ -34,8 +35,7 @@ type SheetRow = {
   focus: WheelSheetFocus | null;
   focusSpan: number;
   showFocus: boolean;
-  planDescription: string | null;
-  challenge: string | null;
+  plan: WheelSheetPlan | null;
 };
 
 function buildRows(spokes: WheelSheetSpoke[]): SheetRow[] {
@@ -53,8 +53,7 @@ function buildRows(spokes: WheelSheetSpoke[]): SheetRow[] {
         focus: null,
         focusSpan: 1,
         showFocus: true,
-        planDescription: null,
-        challenge: null,
+        plan: null,
       });
       return;
     }
@@ -71,8 +70,7 @@ function buildRows(spokes: WheelSheetSpoke[]): SheetRow[] {
           focus,
           focusSpan: plans.length,
           showFocus: planIndex === 0,
-          planDescription: plan?.description ?? null,
-          challenge: plan?.challenge ?? null,
+          plan,
         });
       });
     });
@@ -103,11 +101,12 @@ export function WheelSheet({ spokes, scores }: WheelSheetProps) {
               <th className="w-14 py-2 pr-3 text-center">Now</th>
               <th className="w-16 py-2 pr-3 text-center">1 year</th>
               <th className="w-16 py-2 pr-3 text-center">5 years</th>
-              <th className="py-2 pr-3">Current issue</th>
+              <th className="py-2 pr-3">Current state</th>
               <th className="py-2 pr-3">1 year goal</th>
               <th className="py-2 pr-3">5 year goal</th>
               <th className="py-2 pr-3">Action plan</th>
-              <th className="py-2">Challenge</th>
+              <th className="py-2 pr-3">Challenge</th>
+              <th className="w-16 py-2 text-right">Tasks</th>
             </tr>
           </thead>
           <tbody>
@@ -174,10 +173,16 @@ export function WheelSheet({ spokes, scores }: WheelSheetProps) {
                     </>
                   ) : null}
                   <td className="border-b border-border py-3 pr-3 break-words">
-                    {text(row.planDescription)}
+                    {text(row.plan?.description)}
                   </td>
-                  <td className="border-b border-border py-3 break-words">
-                    {text(row.challenge)}
+                  <td className="border-b border-border py-3 pr-3 break-words">
+                    {text(row.plan?.challenge)}
+                  </td>
+                  <td className="border-b border-border py-3 text-right tabular-nums">
+                    {formatPlanTaskCount(
+                      row.plan?.completedTasks ?? 0,
+                      row.plan?.totalTasks ?? 0,
+                    )}
                   </td>
                 </tr>
               );
@@ -226,6 +231,10 @@ export function WheelSheet({ spokes, scores }: WheelSheetProps) {
                                   · {plan.challenge}
                                 </span>
                               ) : null}
+                              <span className="text-muted-foreground">
+                                {" "}
+                                · {formatPlanTaskCount(plan.completedTasks, plan.totalTasks)}
+                              </span>
                             </li>
                           ))}
                         </ul>

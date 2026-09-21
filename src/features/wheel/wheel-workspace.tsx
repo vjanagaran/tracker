@@ -125,53 +125,52 @@ export function WheelWorkspace({
 
   return (
     <div>
-      <header className="mb-8">
-        <WheelKindSwitch slug={slug} />
-        <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
-          {title}
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {selectedCycle
-            ? `Cycle ${formatPeriod(selectedCycle.period)}`
-            : "No rating yet. Start a cycle to score your spokes."}
-        </p>
-      </header>
-
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+      <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <WheelKindSwitch slug={slug} />
+          <h1 className="text-[1.75rem] font-semibold tracking-tight md:text-[2rem]">
+            {title}
+          </h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {cycles.length > 0 ? (
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Cycle
-              <Select
-                value={selectedCycle?.id ?? ""}
-                onValueChange={(value) => {
-                  if (value) {
-                    router.push(`/wheel/${slug}?cycle=${value}`);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id}>
-                      {formatPeriod(cycle.period)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-          ) : null}
-          <label className="flex min-h-11 flex-col gap-1 text-xs text-muted-foreground">
-            Month
-            <input
-              type="month"
-              value={newPeriod}
-              onChange={(event) => setNewPeriod(event.target.value)}
-              className="min-h-11 w-40 rounded-md border border-input bg-card px-2.5 text-sm text-foreground"
-            />
-          </label>
+            <Select
+              value={selectedCycle?.id ?? null}
+              items={cycles.map((cycle) => ({
+                value: cycle.id,
+                label: formatPeriod(cycle.period),
+              }))}
+              onValueChange={(value) => {
+                if (value) {
+                  router.push(`/wheel/${slug}?cycle=${value}`);
+                }
+              }}
+            >
+              <SelectTrigger className="w-40" aria-label="Cycle">
+                <SelectValue placeholder="Select a cycle">
+                  {selectedCycle ? formatPeriod(selectedCycle.period) : null}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {cycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id}>
+                    {formatPeriod(cycle.period)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No rating yet. Start a cycle to score your spokes.
+            </p>
+          )}
+          <input
+            type="month"
+            value={newPeriod}
+            aria-label="Month for new cycle"
+            onChange={(event) => setNewPeriod(event.target.value)}
+            className="min-h-11 w-40 rounded-md border border-input bg-card px-2.5 text-sm text-foreground"
+          />
           <Button
             type="button"
             className="min-h-11 px-4"
@@ -188,20 +187,20 @@ export function WheelWorkspace({
             Compare
             <ChevronRight className="size-4" aria-hidden="true" />
           </Link>
+          {kind === "WOB" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-11 shrink-0"
+              aria-label="Configure spokes"
+              onClick={() => setSpokesOpen(true)}
+            >
+              <Settings className="size-5" />
+            </Button>
+          ) : null}
         </div>
-        {kind === "WOB" ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0 self-end"
-            aria-label="Configure spokes"
-            onClick={() => setSpokesOpen(true)}
-          >
-            <Settings className="size-5" />
-          </Button>
-        ) : null}
-      </div>
+      </header>
 
       {!emptyBusiness ? (
         <div className="mb-6 flex gap-1" role="tablist" aria-label="Wheel view">

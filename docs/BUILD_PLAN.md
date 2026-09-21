@@ -179,6 +179,21 @@ their own day rather than the server's.
 
 ---
 
+## Phase 10 — Morning note
+
+- [x] `profiles.timezone`, `morning_note_on` (default false), `morning_note_sent_on`
+- [x] Profile: opt-in + timezone. Board does not see these
+- [x] Compose: toward spokes, due today first, overdue as Later, meeting only if today
+- [x] Skip send when the day is empty
+- [x] Subject from spokes, never from a count
+- [x] Resend + Vercel cron at 07:00 local via an hourly tick
+- [x] Fourth secret-key use documented: cron reads the member's own rows
+
+**Done when:** an opted-in member with a task due today in Asia/Kolkata receives
+one mail at 07:00 IST that names the spoke, and a quiet day sends nothing.
+
+---
+
 ## Remaining
 
 1. Add the PWA icon files the manifest already names.

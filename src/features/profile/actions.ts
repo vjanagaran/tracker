@@ -48,6 +48,8 @@ export async function updateProfile(
       about_company: emptyToNull(parsed.data.aboutCompany),
       website: normalizeHttpUrl(parsed.data.website),
       linkedin: normalizeHttpUrl(parsed.data.linkedin),
+      morning_note_on: parsed.data.morningNoteOn,
+      timezone: parsed.data.morningNoteOn ? parsed.data.timezone : emptyToNull(parsed.data.timezone),
     })
     .eq("id", user.id);
 

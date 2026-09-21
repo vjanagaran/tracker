@@ -303,8 +303,11 @@ export type Database = {
           industry: string | null
           is_superadmin: boolean
           linkedin: string | null
+          morning_note_on: boolean
+          morning_note_sent_on: string | null
           phone: string | null
           photo_url: string | null
+          timezone: string | null
           updated_at: string
           website: string | null
         }
@@ -322,8 +325,11 @@ export type Database = {
           industry?: string | null
           is_superadmin?: boolean
           linkedin?: string | null
+          morning_note_on?: boolean
+          morning_note_sent_on?: string | null
           phone?: string | null
           photo_url?: string | null
+          timezone?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -341,8 +347,11 @@ export type Database = {
           industry?: string | null
           is_superadmin?: boolean
           linkedin?: string | null
+          morning_note_on?: boolean
+          morning_note_sent_on?: string | null
           phone?: string | null
           photo_url?: string | null
+          timezone?: string | null
           updated_at?: string
           website?: string | null
         }

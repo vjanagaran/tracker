@@ -37,11 +37,19 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProfileInput>({
     resolver: zodResolver(profileSchema),
     defaultValues,
   });
+  const morningNoteOn = watch("morningNoteOn");
+  const timezone = watch("timezone");
+  const timeZones =
+    typeof Intl !== "undefined" && "supportedValuesOf" in Intl
+      ? Intl.supportedValuesOf("timeZone")
+      : ["Asia/Kolkata", "UTC"];
 
   async function onSubmit(values: ProfileInput) {
     setFormError(null);
@@ -250,6 +258,48 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
             />
           </Field>
         </div>
+
+        <section id="morning-note" className="flex flex-col gap-3 border-t border-border pt-6">
+          <h2 className="text-sm font-medium tracking-tight">Morning note</h2>
+          <p className="max-w-prose text-sm text-muted-foreground">
+            A short mail at 7:00 in your timezone when something is due today, overdue, or the
+            board meets today. Off until you turn it on. The board does not see this.
+          </p>
+          <label className="flex min-h-11 items-center gap-3 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-primary"
+              checked={morningNoteOn}
+              onChange={(event) => {
+                const on = event.target.checked;
+                setValue("morningNoteOn", on, { shouldValidate: true });
+                if (on && !timezone) {
+                  setValue("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone, {
+                    shouldValidate: true,
+                  });
+                }
+              }}
+            />
+            Send the morning note
+          </label>
+          <Field id="timezone" label="Timezone" error={errors.timezone?.message}>
+            <select
+              id="timezone"
+              className="h-11 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              value={timezone}
+              onChange={(event) =>
+                setValue("timezone", event.target.value, { shouldValidate: true })
+              }
+            >
+              <option value="">Choose your timezone</option>
+              {timeZones.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </section>
 
         {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
         {saved ? <p className="text-sm text-muted-foreground">Profile saved.</p> : null}

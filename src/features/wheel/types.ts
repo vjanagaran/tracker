@@ -16,6 +16,8 @@ export type WheelSheetPlan = {
   id: string;
   description: string;
   challenge: string | null;
+  completedTasks: number;
+  totalTasks: number;
 };
 
 export type WheelSheetFocus = {

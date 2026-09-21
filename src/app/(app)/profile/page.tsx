@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, phone, photo_url, is_superadmin, designation, company, company_founded_year, industry, city, about, about_company, website, linkedin",
+      "full_name, phone, photo_url, is_superadmin, designation, company, company_founded_year, industry, city, about, about_company, website, linkedin, morning_note_on, timezone",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -62,6 +62,8 @@ export default async function ProfilePage() {
           aboutCompany: profile?.about_company ?? "",
           website: profile?.website ?? "",
           linkedin: profile?.linkedin ?? "",
+          morningNoteOn: profile?.morning_note_on ?? false,
+          timezone: profile?.timezone ?? "",
         }}
         initialPhotoUrl={profile?.photo_url ?? null}
         email={user.email ?? ""}

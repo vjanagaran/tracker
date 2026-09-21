@@ -34,12 +34,21 @@ export function CycleCompareControls({
     router.push(`/wheel/${slug}/cycles?${params.toString()}`);
   }
 
+  const cycleItems = cycles.map((cycle) => ({
+    value: cycle.id,
+    label: formatPeriod(cycle.period),
+  }));
+
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Earlier
-        <Select value={earlierId} onValueChange={(value) => value && go(value, laterId)}>
-          <SelectTrigger className="w-full">
+        <Select
+          value={earlierId}
+          items={cycleItems}
+          onValueChange={(value) => value && go(value, laterId)}
+        >
+          <SelectTrigger className="w-full" aria-label="Earlier cycle">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -53,8 +62,12 @@ export function CycleCompareControls({
       </label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Later
-        <Select value={laterId} onValueChange={(value) => value && go(earlierId, value)}>
-          <SelectTrigger className="w-full">
+        <Select
+          value={laterId}
+          items={cycleItems}
+          onValueChange={(value) => value && go(earlierId, value)}
+        >
+          <SelectTrigger className="w-full" aria-label="Later cycle">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

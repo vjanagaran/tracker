@@ -67,6 +67,8 @@ Migrations are in `supabase/migrations/`. Read them before touching the schema.
 ```
 profiles          one per auth user; the only shared personal data
                   name, photo, phone, email, role, company, city, about, links
+                  timezone, morning_note_on, morning_note_sent_on are private
+                  settings — never shown on /people
 boards            tenant. name, cadence_days, meeting_weekday
 board_members     roster. role, status, joined_on, left_on
 meetings          calendar per board; agenda (planned topics) and notes
@@ -172,6 +174,9 @@ NEXT_PUBLIC_APP_URL=              # public origin; invite and reset emails
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=              # server only. NEVER expose to the client
+RESEND_API_KEY=                   # morning note only
+MORNING_NOTE_FROM=                # e.g. Personal Board <notes@domain>
+CRON_SECRET=                      # Vercel cron Bearer token
 ```
 
 `SUPABASE_SECRET_KEY` stays on the server. Current uses:
@@ -180,9 +185,11 @@ SUPABASE_SECRET_KEY=              # server only. NEVER expose to the client
 - `auth.admin.getUserById` in the admin roster loader (email and whether
   the invite was accepted)
 - `scripts/rls-suite.ts` for test fixtures
+- morning-note cron: list opted-in members and read each one's own tasks
+  and meetings, then send them their own digest
 
 If it appears anywhere reachable from a client component, that is a bug. Do not
-add a fourth use without asking.
+add a fifth use without asking.
 
 ---
 
@@ -198,7 +205,7 @@ app/
   (app)/
     layout.tsx                  shell: sidebar on desktop, bottom tabs on mobile
     dashboard/page.tsx          the landing screen; what is due and what is unrated
-    profile/page.tsx            edit own profile
+    profile/page.tsx            edit own profile; morning-note opt-in
     people/[userId]/page.tsx    co-member profile, read-only
     wheel/
       [type]/page.tsx           type = life | business — wheel + score table
@@ -216,12 +223,15 @@ app/
   auth/callback/route.ts        PKCE code exchange
   offline/page.tsx              PWA fallback
   radar/page.tsx                hardcoded radar preview; no auth
+  api/morning-note/route.ts     hourly cron; Bearer CRON_SECRET; no session
 ```
 
-There is no `app/api/` tree. Server components read data by default. Mutations
-go through server actions. TanStack Query is for client-side interactive views
-— chiefly the task list and the score grid, where optimistic updates matter.
-`/radar` is a development preview with wireframe scores, not a member screen.
+There is otherwise no `app/api/` tree. Server components read data by default.
+Mutations go through server actions. TanStack Query is for client-side
+interactive views — chiefly the task list and the score grid, where optimistic
+updates matter. `/radar` is a development preview with wireframe scores, not a
+member screen. The morning-note route is the one exception: Vercel cron cannot
+call a server action.
 
 ---
 
@@ -295,7 +305,21 @@ adds and moves meetings and edits the agenda.
 
 ### Profile (`/profile`, `/people/[userId]`)
 Edit your own: name, photo, role, company, city, about, links, phone.
-Co-members open `/people/[userId]` to read it. Sign out lives on the edit page.
+Morning note opt-in and timezone live here too — they are not on the
+co-member view. Sign out lives on the edit page.
+
+### Morning note (opt-in mail)
+A dashboard in the inbox, not a Todoist chase. Off until the member turns it
+on. Sent at 07:00 in their timezone when something is due today, overdue, or
+the board meets today. Quiet otherwise.
+
+Subject names the spokes (or Life / Business) of today's work — never a count.
+Body: Toward {spokes}, Today (max 4, labeled by tag / spoke / repeat), Later
+for overdue, meeting only if it is today, one button to the dashboard. No
+scores, no “needs a plan”, no “you haven’t rated.”
+
+Hourly Vercel cron at `/api/morning-note`. `morning_note_sent_on` is the
+member's local date so a double tick in the same hour does not mail twice.
 
 ### Cycles (`/wheel/[type]/cycles`)
 List of cycles, latest first. Select any two to overlay. Open a past cycle to
@@ -352,7 +376,9 @@ Do not add these without asking. Each was considered and rejected.
 
 - Cross-member visibility of anything beyond profile, calendar and counts.
 - Any derived or averaged score.
-- Notifications, reminders or nudges about neglected spokes.
+- Notifications, reminders or nudges about neglected spokes. The opt-in
+  morning note is the one exception, and it still must not mention an
+  unrated or low spoke.
 - Anchors or definitions for what a score of 3 means — it is personal reference.
 - Assigning tasks to other people.
 - A completion-percentage metric. The outcome is a rounder wheel, not a score.
