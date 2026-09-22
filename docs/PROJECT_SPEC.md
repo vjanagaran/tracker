@@ -121,7 +121,7 @@ gets no exemption. Any change to this function needs careful review.
 
 Seeded from `wol_spoke_templates`, identical system-wide:
 Health · Family · Business · Personal Finance · Personal Growth · Fun & Hobby ·
-Spiritual pursuits · Giving back
+Giving back · Spiritual pursuits
 
 Changing this list is a central act, which is what keeps the life wheel portable
 between boards. Members cannot add WOL spokes; anything custom goes on WOB.

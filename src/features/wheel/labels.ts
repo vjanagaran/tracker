@@ -5,8 +5,8 @@ const WOL_SHORT: Record<string, string> = {
   "Personal Finance": "Finance",
   "Personal Growth": "Growth",
   "Fun & Hobby": "Fun",
-  "Spiritual pursuits": "Spiritual",
   "Giving back": "Giving",
+  "Spiritual pursuits": "Spiritual",
 };
 
 /** Shorten in the data. The SVG must never clip a label. */

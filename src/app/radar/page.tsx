@@ -9,8 +9,8 @@ const DEMO_AXES: WheelRadarAxis[] = [
   { id: "finance", name: "Personal Finance", today: 2, oneYear: 5, fiveYears: 8 },
   { id: "growth", name: "Personal Growth", today: 4, oneYear: 6, fiveYears: 8 },
   { id: "fun", name: "Fun & Hobby", today: 3, oneYear: 5, fiveYears: 8 },
-  { id: "spiritual", name: "Spiritual pursuits", today: 4, oneYear: 6, fiveYears: 8 },
   { id: "giving", name: "Giving back", today: 3, oneYear: 6, fiveYears: 8 },
+  { id: "spiritual", name: "Spiritual pursuits", today: 4, oneYear: 6, fiveYears: 8 },
 ];
 
 const MOVEMENT_AXES: ComparisonAxis[] = [
@@ -20,8 +20,8 @@ const MOVEMENT_AXES: ComparisonAxis[] = [
   { id: "finance", name: "Personal Finance", earlier: 2, later: 4 },
   { id: "growth", name: "Personal Growth", earlier: 4, later: 6 },
   { id: "fun", name: "Fun & Hobby", earlier: 3, later: 5 },
-  { id: "spiritual", name: "Spiritual pursuits", earlier: 4, later: 6 },
   { id: "giving", name: "Giving back", earlier: 3, later: 5 },
+  { id: "spiritual", name: "Spiritual pursuits", earlier: 4, later: 6 },
 ];
 
 export default function RadarPreviewPage() {
