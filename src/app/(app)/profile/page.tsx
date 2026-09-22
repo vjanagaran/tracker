@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/features/auth/actions";
+import { InviteFriendForm } from "@/features/invite/invite-friend-form";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { requireUser } from "@/lib/auth/require-user";
 
@@ -68,6 +69,7 @@ export default async function ProfilePage() {
         initialPhotoUrl={profile?.photo_url ?? null}
         email={user.email ?? ""}
       />
+      <InviteFriendForm />
       <form action={signOut} className="mt-8">
         <Button type="submit" variant="outline" className="min-h-11 px-4">
           <LogOut className="size-4" aria-hidden="true" />

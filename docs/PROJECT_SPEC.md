@@ -54,7 +54,7 @@ board sees two numbers per member: finished since the last meeting, and open now
 |---|---|---|
 | Superadmin | Create boards, manage rosters, invite members | Read any member's wheels, plans or tasks — including counts |
 | Chairman | Everything a director can, plus manage that board's meeting calendar | Read any other member's content |
-| Director | Own wheels, plans, tasks. See the board roster, calendar, and the counts dashboard | Read or edit anyone else's content |
+| Director | Own wheels, plans, tasks. Invite a friend to the platform (no board). See the board roster, calendar, and the counts dashboard | Read or edit anyone else's content |
 
 Nobody can edit another member's record. There is no administrative override.
 
@@ -205,7 +205,7 @@ app/
   (app)/
     layout.tsx                  shell: sidebar on desktop, bottom tabs on mobile
     dashboard/page.tsx          the landing screen; what is due and what is unrated
-    profile/page.tsx            edit own profile; morning-note opt-in
+    profile/page.tsx            edit own profile; morning-note opt-in; invite a friend
     people/[userId]/page.tsx    co-member profile, read-only
     wheel/
       [type]/page.tsx           type = life | business — wheel + score table
@@ -306,7 +306,8 @@ adds and moves meetings and edits the agenda.
 ### Profile (`/profile`, `/people/[userId]`)
 Edit your own: name, photo, role, company, city, about, links, phone.
 Morning note opt-in and timezone live here too — they are not on the
-co-member view. Sign out lives on the edit page.
+co-member view. Invite a friend lives here as well: email only, no board.
+Sign out lives on the edit page.
 
 ### Morning note (opt-in mail)
 A dashboard in the inbox, not a Todoist chase. Off until the member turns it
