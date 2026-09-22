@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserRound } from "lucide-react";
+import { APP_NAME } from "@/lib/brand";
 
 type MobileHeaderProps = {
   name: string;
@@ -8,7 +9,7 @@ type MobileHeaderProps = {
 export function MobileHeader({ name }: MobileHeaderProps) {
   return (
     <header className="flex min-h-13 items-center justify-between border-b border-border bg-background px-4 md:hidden">
-      <p className="text-sm font-medium tracking-tight">Personal Board</p>
+      <p className="truncate pr-3 text-sm font-medium tracking-tight">{APP_NAME}</p>
       <Link
         href="/profile"
         className="flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground"

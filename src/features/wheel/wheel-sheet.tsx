@@ -16,6 +16,8 @@ function text(value: string | null | undefined) {
   return trimmed ? trimmed : "—";
 }
 
+export { scoreText as sheetScoreText, text as sheetCellText };
+
 function spokeRowCount(spoke: WheelSheetSpoke) {
   if (spoke.focusAreas.length === 0) {
     return 1;
@@ -26,7 +28,7 @@ function spokeRowCount(spoke: WheelSheetSpoke) {
   );
 }
 
-type SheetRow = {
+export type SheetRow = {
   key: string;
   index: number;
   spoke: WheelSheetSpoke;
@@ -38,7 +40,7 @@ type SheetRow = {
   plan: WheelSheetPlan | null;
 };
 
-function buildRows(spokes: WheelSheetSpoke[]): SheetRow[] {
+export function buildRows(spokes: WheelSheetSpoke[]): SheetRow[] {
   const rows: SheetRow[] = [];
 
   spokes.forEach((spoke, index) => {

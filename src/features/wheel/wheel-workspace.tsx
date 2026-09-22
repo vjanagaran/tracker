@@ -20,6 +20,7 @@ import { ScoreGrid } from "./score-grid";
 import { SpokeManager } from "./spoke-manager";
 import { useScoreGrid } from "./use-score-grid";
 import { WheelKindSwitch } from "./wheel-kind-switch";
+import { WheelPdfButton } from "./wheel-pdf-button";
 import { WheelRadar } from "./radar";
 import { WheelSheet } from "./wheel-sheet";
 import type {
@@ -35,6 +36,7 @@ type WheelWorkspaceProps = {
   slug: WheelSlug;
   kind: WheelKind;
   title: string;
+  ownerName: string;
   wheelId: string;
   allSpokes: WheelSpoke[];
   visibleSpokes: WheelSpoke[];
@@ -49,6 +51,7 @@ export function WheelWorkspace({
   slug,
   kind,
   title,
+  ownerName,
   wheelId,
   allSpokes,
   visibleSpokes,
@@ -187,6 +190,15 @@ export function WheelWorkspace({
             Compare
             <ChevronRight className="size-4" aria-hidden="true" />
           </Link>
+          <WheelPdfButton
+            ownerName={ownerName}
+            kind={kind}
+            period={selectedCycle?.period ?? null}
+            spokes={sheetSpokes}
+            scores={draft}
+            axes={radarAxes}
+            disabled={emptyBusiness || visibleSpokes.length === 0}
+          />
           {kind === "WOB" ? (
             <Button
               type="button"

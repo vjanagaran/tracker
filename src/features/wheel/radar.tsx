@@ -26,13 +26,18 @@ type WheelRadarProps = {
    * still carries every score.
    */
   variant?: "full" | "mini";
+  interactive?: boolean;
 };
 
 const TODAY = "#1f4e79";
 const YEAR = "#6b93b8";
 const FIVE = "#aab8c4";
 
-export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
+export function WheelRadar({
+  axes,
+  variant = "full",
+  interactive = true,
+}: WheelRadarProps) {
   const mini = variant === "mini";
   const count = axes.length;
   if (count === 0) {
@@ -120,12 +125,8 @@ export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
         </g>
         {(mini ? [] : axes).map((axis, index) => {
           const point = labelPoint(index, count);
-          return (
-            <a
-              key={`${axis.id}-label`}
-              href={`/spoke/${axis.id}`}
-              className="cursor-pointer"
-            >
+          const label = (
+            <>
               <title>{axis.name}</title>
               <circle cx={point.x} cy={point.y} r="22" fill="transparent" />
               <text
@@ -139,6 +140,18 @@ export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
               >
                 {radarLabel(axis.name)}
               </text>
+            </>
+          );
+          if (!interactive) {
+            return <g key={`${axis.id}-label`}>{label}</g>;
+          }
+          return (
+            <a
+              key={`${axis.id}-label`}
+              href={`/spoke/${axis.id}`}
+              className="cursor-pointer"
+            >
+              {label}
             </a>
           );
         })}
@@ -159,7 +172,7 @@ export function WheelRadar({ axes, variant = "full" }: WheelRadarProps) {
           </span>
         </figcaption>
       )}
-      {mini ? null : (
+      {mini || !interactive ? null : (
         <table className="sr-only">
           <caption>Wheel scores</caption>
           <thead>

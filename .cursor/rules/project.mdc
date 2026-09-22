@@ -1,9 +1,9 @@
 ---
-description: Core context and invariants for the Personal Board app
+description: Core context and invariants for the Holistic Growth Tracker app
 alwaysApply: true
 ---
 
-# Personal Board — core rules
+# Holistic Growth Tracker — core rules
 
 A peer-accountability platform for entrepreneur boards running the Wheel of Life
 and Wheel of Business practice on a fortnightly review cycle. Full detail in

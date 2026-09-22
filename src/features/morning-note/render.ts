@@ -1,4 +1,5 @@
 import { dashboardUrl, profileUrl } from "@/lib/app-url";
+import { APP_NAME } from "@/lib/brand";
 import { overdueLine, taskLine } from "./compose";
 import type { MorningNote } from "./types";
 
@@ -95,7 +96,7 @@ export function renderHtml(note: MorningNote) {
         <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="width:100%;max-width:480px">
           <tr>
             <td>
-              <p style="margin:0 0 4px;color:#6e6b68;font-size:13px">Personal Board</p>
+              <p style="margin:0 0 4px;color:#6e6b68;font-size:13px">${escape(APP_NAME)}</p>
               <h1 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em">${escape(note.heading)}</h1>
               ${toward}
               ${todayBlock}

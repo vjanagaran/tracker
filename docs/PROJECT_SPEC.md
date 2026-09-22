@@ -1,6 +1,6 @@
-# Personal Board — project specification
+# Holistic Growth Tracker — project specification
 
-Working name: **PB**. A peer-accountability platform for entrepreneur boards that
+Working name: **HGT**. A peer-accountability platform for entrepreneur boards that
 run the Wheel of Life / Wheel of Business practice on a fortnightly review cycle.
 
 This document is the single source of truth for the product. Read it fully
@@ -175,7 +175,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=              # server only. NEVER expose to the client
 RESEND_API_KEY=                   # morning note only
-MORNING_NOTE_FROM=                # e.g. Personal Board <notes@domain>
+MORNING_NOTE_FROM=                # e.g. Holistic Growth Tracker <notes@domain>
 CRON_SECRET=                      # Vercel cron Bearer token
 ```
 
@@ -332,7 +332,7 @@ edit it.
 Installable, offline-tolerant, mobile-first. Members will update tasks on a
 phone between meetings and share a laptop screen during them.
 
-- `public/manifest.json` — name **Personal Board**, short_name **PB**, icons at
+- `public/manifest.json` — name **Holistic Growth Tracker**, short_name **HGT**, icons at
   192/512 (maskable included), `display: standalone`, theme colour matching the
   shell. The icon PNG files themselves are still outstanding.
 - `src/sw.ts` with `@serwist/next`, disabled in development.
@@ -388,7 +388,7 @@ Do not add these without asking. Each was considered and rejected.
 ## 10. Open items
 
 - Confirm the exact WOB spoke list per founding member during onboarding.
-- Icon artwork for the manifest (name is Personal Board / PB). Files belong at
+- Icon artwork for the manifest (name is Holistic Growth Tracker / HGT). Files belong at
   `public/icons/` as named in `public/manifest.json`.
 - Whether `/radar` stays a public preview once members are on the app.
 

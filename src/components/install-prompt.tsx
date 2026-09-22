@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import { APP_NAME } from "@/lib/brand";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -103,7 +104,7 @@ export function InstallPrompt() {
           <p className="mt-1 text-sm text-muted-foreground">
             {ios && !deferred
               ? "On iPhone, open Share and choose Add to Home Screen."
-              : "Add Personal Board to this device for quicker access."}
+              : `Add ${APP_NAME} to this device for quicker access.`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

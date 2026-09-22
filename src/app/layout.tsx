@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import { InstallPrompt } from "@/components/install-prompt";
 import { Toaster } from "@/components/ui/sonner";
+import { APP_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  applicationName: "Personal Board",
+  applicationName: APP_NAME,
   title: {
-    default: "Personal Board",
-    template: "%s · Personal Board",
+    default: APP_NAME,
+    template: `%s · ${APP_NAME}`,
   },
   description:
     "Peer accountability for entrepreneur boards running the Wheel of Life and Wheel of Business.",
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Personal Board",
+    title: APP_NAME,
   },
   formatDetection: {
     telephone: false,

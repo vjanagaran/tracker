@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ShieldCheck, UserRound } from "lucide-react";
 import { desktopNav, isNavActive } from "@/components/app-nav";
 import type { MemberBoard } from "@/features/boards/types";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "cn";
 
 type SidebarNavProps = {
@@ -36,7 +37,7 @@ export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavPro
     <aside className="hidden md:flex md:w-[220px] md:shrink-0 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar">
       <div className="px-4 pt-5 pb-4">
         <p className="text-[13px] font-medium tracking-tight">{name || "Profile"}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Personal Board</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{APP_NAME}</p>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 px-2">
         {desktopNav.map((item) => {

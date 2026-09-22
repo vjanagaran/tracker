@@ -24,12 +24,15 @@ export default async function WheelPage({ params, searchParams }: WheelPageProps
   }
 
   const { supabase, user } = await requireUser();
-  const { data: wheel } = await supabase
-    .from("wheels")
-    .select("id, type")
-    .eq("user_id", user.id)
-    .eq("type", config.type satisfies Enums<"wheel_type">)
-    .maybeSingle();
+  const [{ data: wheel }, { data: profile }] = await Promise.all([
+    supabase
+      .from("wheels")
+      .select("id, type")
+      .eq("user_id", user.id)
+      .eq("type", config.type satisfies Enums<"wheel_type">)
+      .maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+  ]);
 
   if (!wheel) {
     return (
@@ -47,6 +50,7 @@ export default async function WheelPage({ params, searchParams }: WheelPageProps
       slug={type as "life" | "business"}
       kind={config.type}
       title={config.title}
+      ownerName={profile?.full_name ?? ""}
       wheelId={wheel.id}
       allSpokes={view.allSpokes}
       visibleSpokes={view.visibleSpokes}

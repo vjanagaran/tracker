@@ -1,4 +1,4 @@
-# Personal Board (PB)
+# Holistic Growth Tracker
 
 A peer-accountability platform for entrepreneur boards running the Wheel of Life
 and Wheel of Business practice on a fortnightly review cycle.

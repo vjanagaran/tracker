@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { APP_NAME } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 
 export function LandingRedirect() {
@@ -26,6 +27,6 @@ export function LandingRedirect() {
   }, [router]);
 
   return (
-    <p className="text-sm text-muted-foreground">Opening Personal Board.</p>
+    <p className="text-sm text-muted-foreground">Opening {APP_NAME}.</p>
   );
 }

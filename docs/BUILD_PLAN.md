@@ -126,7 +126,7 @@ product — give it the polish.
 
 ## Phase 7 — PWA and mobile
 
-- [x] `manifest.json` with maskable icon entries (name: Personal Board / PB)
+- [x] `manifest.json` with maskable icon entries (name: Holistic Growth Tracker / HGT)
 - [ ] Icon PNG files at `public/icons/` (192, 512, maskable, apple-touch)
 - [x] `src/sw.ts` via `@serwist/next`, disabled in dev
 - [x] Precache the shell; **exclude every authenticated route and Supabase call**
