@@ -1,6 +1,4 @@
-import { MobileHeader } from "@/components/mobile-header";
-import { MobileTabBar } from "@/components/mobile-tab-bar";
-import { SidebarNav } from "@/components/sidebar-nav";
+import { AppShell } from "@/components/app-shell";
 import { loadMemberBoards } from "@/features/boards/load";
 import { requireSuperadmin } from "@/lib/auth/require-superadmin";
 
@@ -18,23 +16,13 @@ export default async function AdminLayout({
   const boards = await loadMemberBoards(supabase, user.id);
 
   return (
-    <div className="flex min-h-dvh">
-      <SidebarNav
-        name={profile?.full_name ?? ""}
-        photoUrl={profile?.photo_url ?? null}
-        isSuperadmin
-        boards={boards}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader name={profile?.full_name ?? ""} photoUrl={profile?.photo_url ?? null} />
-        <main
-          id="main"
-          className="flex-1 px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"
-        >
-          {children}
-        </main>
-      </div>
-      <MobileTabBar />
-    </div>
+    <AppShell
+      name={profile?.full_name ?? ""}
+      photoUrl={profile?.photo_url ?? null}
+      isSuperadmin
+      boards={boards}
+    >
+      {children}
+    </AppShell>
   );
 }
