@@ -13,7 +13,7 @@ export default async function AppLayout({
   const { supabase, user } = await requireUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, is_superadmin")
+    .select("full_name, photo_url, is_superadmin")
     .eq("id", user.id)
     .maybeSingle();
   const boards = await loadMemberBoards(supabase, user.id);
@@ -22,11 +22,12 @@ export default async function AppLayout({
     <div className="flex min-h-dvh overflow-x-hidden">
       <SidebarNav
         name={profile?.full_name ?? ""}
+        photoUrl={profile?.photo_url ?? null}
         isSuperadmin={profile?.is_superadmin ?? false}
         boards={boards}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader name={profile?.full_name ?? ""} />
+        <MobileHeader name={profile?.full_name ?? ""} photoUrl={profile?.photo_url ?? null} />
         <main
           id="main"
           className="min-w-0 flex-1 overflow-x-hidden px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"

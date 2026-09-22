@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck, UserRound } from "lucide-react";
+import { ShieldCheck, User } from "lucide-react";
 import { desktopNav, isNavActive } from "@/components/app-nav";
 import type { MemberBoard } from "@/features/boards/types";
 import { APP_NAME } from "@/lib/brand";
@@ -10,6 +10,7 @@ import { cn } from "cn";
 
 type SidebarNavProps = {
   name: string;
+  photoUrl?: string | null;
   isSuperadmin?: boolean;
   boards: MemberBoard[];
 };
@@ -30,16 +31,49 @@ const boardLinkClass = (active: boolean) =>
       : "text-sidebar-foreground/80 hover:bg-foreground/[0.04]",
   );
 
-export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavProps) {
+export function SidebarNav({
+  name,
+  photoUrl = null,
+  isSuperadmin = false,
+  boards,
+}: SidebarNavProps) {
   const pathname = usePathname();
+  const profileActive = pathname.startsWith("/profile");
+  const adminActive = pathname.startsWith("/admin");
 
   return (
-    <aside className="hidden md:flex md:w-[220px] md:shrink-0 md:flex-col md:border-r md:border-sidebar-border md:bg-sidebar">
-      <div className="px-4 pt-5 pb-4">
-        <p className="text-[13px] font-medium tracking-tight">{name || "Profile"}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{APP_NAME}</p>
+    <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-[220px] md:shrink-0 md:flex-col md:self-start md:overflow-y-auto md:border-r md:border-sidebar-border md:bg-sidebar">
+      <div className="px-2 pt-4 pb-3">
+        <Link
+          href="/profile"
+          aria-current={profileActive ? "page" : undefined}
+          className={cn(
+            "flex items-center gap-2.5 rounded-lg px-2 py-2",
+            profileActive
+              ? "bg-sidebar-accent"
+              : "hover:bg-foreground/[0.04]",
+          )}
+        >
+          <span
+            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-sidebar-border bg-muted"
+            aria-hidden="true"
+          >
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="" className="size-full object-cover" />
+            ) : (
+              <User className="size-4 text-muted-foreground" />
+            )}
+          </span>
+          <span className="min-w-0">
+            <p className="truncate text-[13px] font-medium tracking-tight">
+              {name || "Profile"}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{APP_NAME}</p>
+          </span>
+        </Link>
       </div>
-      <nav className="flex flex-1 flex-col gap-0.5 px-2">
+      <nav className="flex flex-col gap-0.5 px-2 pb-4">
         {desktopNav.map((item) => {
           if (item.href === "/boards") {
             const indexActive = pathname === "/boards";
@@ -71,6 +105,22 @@ export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavPro
                     })}
                   </ul>
                 ) : null}
+                {isSuperadmin ? (
+                  <>
+                    <div
+                      className="mx-2 my-2 h-px bg-sidebar-border"
+                      role="separator"
+                    />
+                    <Link
+                      href="/admin/boards"
+                      aria-current={adminActive ? "page" : undefined}
+                      className={navLinkClass(adminActive)}
+                    >
+                      <ShieldCheck className="size-4 shrink-0 opacity-70" aria-hidden="true" />
+                      Boards admin
+                    </Link>
+                  </>
+                ) : null}
               </div>
             );
           }
@@ -89,26 +139,6 @@ export function SidebarNav({ name, isSuperadmin = false, boards }: SidebarNavPro
           );
         })}
       </nav>
-      <div className="flex flex-col gap-0.5 px-2 pb-4">
-        {isSuperadmin ? (
-          <Link
-            href="/admin/boards"
-            aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-            className={navLinkClass(pathname.startsWith("/admin"))}
-          >
-            <ShieldCheck className="size-4 shrink-0 opacity-70" aria-hidden="true" />
-            Boards admin
-          </Link>
-        ) : null}
-        <Link
-          href="/profile"
-          aria-current={pathname.startsWith("/profile") ? "page" : undefined}
-          className={navLinkClass(pathname.startsWith("/profile"))}
-        >
-          <UserRound className="size-4 shrink-0 opacity-70" aria-hidden="true" />
-          Profile
-        </Link>
-      </div>
     </aside>
   );
 }

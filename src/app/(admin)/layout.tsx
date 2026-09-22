@@ -12,16 +12,21 @@ export default async function AdminLayout({
   const { supabase, user } = await requireSuperadmin();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, photo_url")
     .eq("id", user.id)
     .maybeSingle();
   const boards = await loadMemberBoards(supabase, user.id);
 
   return (
     <div className="flex min-h-dvh">
-      <SidebarNav name={profile?.full_name ?? ""} isSuperadmin boards={boards} />
+      <SidebarNav
+        name={profile?.full_name ?? ""}
+        photoUrl={profile?.photo_url ?? null}
+        isSuperadmin
+        boards={boards}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileHeader name={profile?.full_name ?? ""} />
+        <MobileHeader name={profile?.full_name ?? ""} photoUrl={profile?.photo_url ?? null} />
         <main
           id="main"
           className="flex-1 px-5 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-10 md:py-9 md:pb-10"
