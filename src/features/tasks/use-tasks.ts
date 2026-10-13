@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateTaskStatus } from "./actions";
+import { updateTaskStatus, updateTaskTarget } from "./actions";
 import { taskQueryKey } from "./query-keys";
 import type { TaskItem, TaskNote, TaskStatus } from "./types";
 
@@ -58,6 +58,32 @@ export function useTasks(initialTasks: TaskItem[]) {
     },
   });
 
+  const targetMutation = useMutation({
+    mutationFn: async (input: { id: string; targetOn: string }) => {
+      const result = await updateTaskTarget(input);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+      return result;
+    },
+    onMutate: async ({ id, targetOn }) => {
+      await queryClient.cancelQueries({ queryKey: taskQueryKey });
+      const previous = queryClient.getQueryData<TaskItem[]>(taskQueryKey);
+      queryClient.setQueryData<TaskItem[]>(taskQueryKey, (current) =>
+        (current ?? []).map((task) => (task.id === id ? { ...task, targetOn } : task)),
+      );
+      return { previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(taskQueryKey, context.previous);
+      }
+    },
+    onSuccess: (result) => {
+      upsertTask(result.task);
+    },
+  });
+
   function upsertTask(task: TaskItem) {
     queryClient.setQueryData<TaskItem[]>(taskQueryKey, (current) => {
       const list = current ?? [];
@@ -69,6 +95,12 @@ export function useTasks(initialTasks: TaskItem[]) {
       next[index] = task;
       return next;
     });
+  }
+
+  function removeTask(taskId: string) {
+    queryClient.setQueryData<TaskItem[]>(taskQueryKey, (current) =>
+      (current ?? []).filter((task) => task.id !== taskId),
+    );
   }
 
   function appendNote(taskId: string, note: TaskNote) {
@@ -84,9 +116,17 @@ export function useTasks(initialTasks: TaskItem[]) {
     updateStatus: (id: string, status: TaskStatus) => {
       statusMutation.mutate({ id, status });
     },
+    updateTarget: (id: string, targetOn: string) => {
+      targetMutation.mutate({ id, targetOn });
+    },
     upsertTask,
+    removeTask,
     appendNote,
     statusError:
-      statusMutation.error instanceof Error ? statusMutation.error.message : null,
+      statusMutation.error instanceof Error
+        ? statusMutation.error.message
+        : targetMutation.error instanceof Error
+          ? targetMutation.error.message
+          : null,
   };
 }

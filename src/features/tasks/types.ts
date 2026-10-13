@@ -3,6 +3,7 @@ import type { Enums } from "@/lib/database.types";
 export type TaskStatus = Enums<"task_status">;
 export type TaskTag = Enums<"task_tag">;
 export type TaskRepeat = Enums<"task_repeat">;
+export type TaskPriority = Enums<"task_priority">;
 
 export const TASK_STATUSES: TaskStatus[] = [
   "Not Started",
@@ -24,15 +25,31 @@ export const CLOSED_STATUSES: TaskStatus[] = ["Completed", "Cancelled"];
 
 export const TASK_TAGS: TaskTag[] = ["WOL", "WOB", "OPEN"];
 
+export const TASK_PRIORITIES: TaskPriority[] = ["high", "medium", "low", "flexi"];
+
 export const TASK_REPEATS: TaskRepeat[] = ["daily", "weekly", "fortnightly", "monthly"];
+
+export type WheelType = Enums<"wheel_type">;
 
 export type PlanOption = {
   id: string;
   description: string;
   spokeName: string;
   focusIssue: string;
-  wheelType: Enums<"wheel_type">;
+  wheelType: WheelType;
+  focusAreaId: string;
 };
+
+export type TaskTreeFocus = { id: string; issue: string };
+
+export type TaskTreeSpoke = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  focusAreas: TaskTreeFocus[];
+};
+
+export type TaskTreeWheel = { type: WheelType; spokes: TaskTreeSpoke[] };
 
 export type TaskNote = {
   id: string;
@@ -43,10 +60,16 @@ export type TaskNote = {
 export type TaskItem = {
   id: string;
   title: string;
+  description: string | null;
   tag: TaskTag | null;
   status: TaskStatus;
+  priority: TaskPriority;
   plannedStartOn: string | null;
+  /** HH:MM, only ever with a planned start day. */
+  plannedStartTime: string | null;
   targetOn: string | null;
+  /** HH:MM, only ever with a finish-by day. */
+  targetTime: string | null;
   /** Read from the database only. Never send this on insert or update. */
   completedOn: string | null;
   repeatEvery: TaskRepeat | null;

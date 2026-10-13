@@ -352,6 +352,59 @@ async function main() {
       throw new Error("B could not add a personal note");
     }
 
+    const { data: category, error: categoryError } = await asB
+      .from("note_categories")
+      .insert({ user_id: ids.b, name: "Company", sort_order: 0 })
+      .select("id")
+      .single();
+    ownerOk(
+      "B can write own note categories",
+      Boolean(category && !categoryError),
+      categoryError?.message ?? "inserted",
+    );
+    if (!category) {
+      throw new Error("B could not add a note category");
+    }
+
+    const { error: subcategoryError } = await asB
+      .from("note_categories")
+      .insert({ user_id: ids.b, parent_id: category.id, name: "Tax", sort_order: 0 });
+    ownerOk(
+      "B can nest a subcategory under own category",
+      !subcategoryError,
+      subcategoryError?.message ?? "inserted",
+    );
+
+    const { error: loopError } = await asB
+      .from("note_categories")
+      .update({ parent_id: category.id })
+      .eq("id", category.id);
+    ownerOk(
+      "A category cannot sit inside itself",
+      Boolean(loopError),
+      loopError?.message ?? "update was allowed",
+    );
+
+    const { error: filedError } = await asB
+      .from("notes")
+      .update({ category_id: category.id })
+      .eq("id", document.id);
+    ownerOk("B can file own note under own category", !filedError, filedError?.message ?? "updated");
+
+    const { data: comment, error: commentError } = await asB
+      .from("note_comments")
+      .insert({ note_id: document.id, comment: "Renewed in October" })
+      .select("id")
+      .single();
+    ownerOk(
+      "B can comment on own note",
+      Boolean(comment && !commentError),
+      commentError?.message ?? "inserted",
+    );
+    if (!comment) {
+      throw new Error("B could not add a note comment");
+    }
+
     const { data: noteFile, error: noteFileError } = await asB
       .from("note_files")
       .insert({
@@ -454,6 +507,16 @@ async function main() {
         filter: { column: "id", value: noteFile.id },
         update: { original_name: "stolen.pdf" },
       },
+      {
+        table: "note_categories" as const,
+        filter: { column: "id", value: category.id },
+        update: { name: "Hijacked" },
+      },
+      {
+        table: "note_comments" as const,
+        filter: { column: "id", value: comment.id },
+        update: { comment: "Hijacked" },
+      },
     ];
 
     for (const attacker of [
@@ -530,6 +593,31 @@ async function main() {
     deniedWrite(
       "A cannot insert a personal note for B",
       await asA.from("notes").insert({ user_id: ids.b, title: "Stolen" }).select(),
+    );
+    deniedWrite(
+      "A cannot insert a note category for B",
+      await asA.from("note_categories").insert({ user_id: ids.b, name: "Stolen" }).select(),
+    );
+    deniedWrite(
+      "A cannot nest a category under B's category",
+      await asA
+        .from("note_categories")
+        .insert({ user_id: ids.a, parent_id: category.id, name: "Stolen" })
+        .select(),
+    );
+    deniedWrite(
+      "A cannot file an own note under B's category",
+      await asA
+        .from("notes")
+        .insert({ user_id: ids.a, title: "Mine", category_id: category.id })
+        .select(),
+    );
+    deniedWrite(
+      "A cannot comment on B's note",
+      await asA
+        .from("note_comments")
+        .insert({ note_id: document.id, comment: "Stolen" })
+        .select(),
     );
     deniedWrite(
       "A cannot attach a file to B's note",

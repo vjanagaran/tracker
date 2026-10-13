@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -138,17 +139,27 @@ export function FocusAreaCard({ area }: { area: FocusArea }) {
             </label>
           </div>
         </div>
-        {plans.length === 0 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11 shrink-0 px-3"
-            disabled={removingArea}
-            onClick={() => setConfirmRemove(true)}
-          >
-            {removingArea ? "Removing" : "Remove"}
-          </Button>
-        ) : null}
+        <div className="flex shrink-0 items-center">
+          {area.openTasks > 0 ? (
+            <Link
+              href={`/tasks?node=focus:${area.id}`}
+              className="inline-flex min-h-11 items-center px-3 text-sm text-primary underline-offset-4 hover:underline"
+            >
+              {area.openTasks} open {area.openTasks === 1 ? "task" : "tasks"}
+            </Link>
+          ) : null}
+          {plans.length === 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 px-3"
+              disabled={removingArea}
+              onClick={() => setConfirmRemove(true)}
+            >
+              {removingArea ? "Removing" : "Remove"}
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       <div className="px-3.5 py-1">

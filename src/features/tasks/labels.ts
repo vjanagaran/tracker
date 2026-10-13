@@ -1,7 +1,6 @@
 import { format, parseISO } from "date-fns";
+import { compareOpen } from "./order.ts";
 import type { PlanOption, TaskItem, TaskRepeat, TaskTag } from "./types";
-import { isOpenStatus } from "./types";
-
 export function repeatLabel(repeat: TaskRepeat | null) {
   if (repeat === "daily") return "Daily";
   if (repeat === "weekly") return "Weekly";
@@ -43,28 +42,8 @@ export function workingToward(task: TaskItem, catalog: PlanOption[]) {
   return labels.length > 0 ? labels.join(" · ") : "—";
 }
 
-export function openCounts(tasks: TaskItem[]) {
-  const open = tasks.filter((task) => isOpenStatus(task.status));
-  return {
-    open: open.length,
-    life: open.filter((task) => task.tag === "WOL").length,
-    business: open.filter((task) => task.tag === "WOB").length,
-    openItem: open.filter((task) => task.tag === "OPEN").length,
-  };
-}
-
 export function sortOpen(tasks: TaskItem[]) {
-  return [...tasks].sort((a, b) => {
-    if (a.targetOn && b.targetOn) {
-      const byDate = a.targetOn.localeCompare(b.targetOn);
-      if (byDate !== 0) return byDate;
-    } else if (a.targetOn) {
-      return -1;
-    } else if (b.targetOn) {
-      return 1;
-    }
-    return a.title.localeCompare(b.title);
-  });
+  return [...tasks].sort(compareOpen);
 }
 
 export function sortClosed(tasks: TaskItem[]) {

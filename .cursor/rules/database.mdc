@@ -19,7 +19,8 @@ npx supabase gen types typescript --linked > src/lib/database.types.ts
 
 Every table has RLS enabled. Ownership below `wheels` resolves through helper
 functions — `owns_wheel`, `owns_spoke`, `owns_cycle`, `owns_focus_area`,
-`owns_task` — all `SECURITY DEFINER` with `set search_path = public`.
+`owns_task`, `owns_note`, `owns_note_category` — all `SECURITY DEFINER` with
+`set search_path = public`.
 
 **Any new table gets a policy in the same migration that creates it.** A table
 with RLS on and no policy is invisible; a table with RLS off is a leak. Neither

@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/require-user";
+import { refreshNotes } from "./refresh";
 import type { Json } from "@/lib/database.types";
-import { bodyTextFromDoc, persistableBody, previewFromText } from "./body";
-import { emptyBody } from "./load";
+import { bodyTextFromDoc, persistableBody } from "./body";
+import { emptyBody, NOTE_LIST_COLUMNS, toNoteListItem } from "./load";
 import {
+  addNoteCommentSchema,
+  createNoteSchema,
   NOTE_BUCKET,
   noteIdSchema,
   noteObjectPath,
@@ -14,31 +17,30 @@ import {
   SIGNED_URL_SECONDS,
   updateNoteSchema,
 } from "./schema";
-import type { NoteDetail, NoteFile, NoteListItem } from "./types";
+import type { NoteComment, NoteFile, NoteListItem } from "./types";
 
 export type NoteActionResult = { error: string } | { ok: true; note: NoteListItem };
-export type NoteDetailResult = { error: string } | { ok: true; note: NoteDetail };
 export type NoteFileResult = { error: string } | { ok: true; file: NoteFile };
+export type NoteCommentResult = { error: string } | { ok: true; comment: NoteComment };
 export type NoteDeleteResult = { error: string } | { ok: true };
 
-function refreshNotes(noteId?: string) {
-  revalidatePath("/notes");
-  if (noteId) {
-    revalidatePath(`/notes/${noteId}`);
+export async function createNote(input?: unknown): Promise<NoteActionResult> {
+  const parsed = createNoteSchema.safeParse(input ?? {});
+  if (!parsed.success) {
+    return { error: "The note could not be added." };
   }
-}
 
-export async function createNote(): Promise<NoteActionResult> {
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
     .from("notes")
     .insert({
       user_id: user.id,
       title: "",
+      category_id: parsed.data.categoryId ?? null,
       body: emptyBody(),
       body_text: "",
     })
-    .select("id, title, body_text, updated_at")
+    .select(NOTE_LIST_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -46,15 +48,7 @@ export async function createNote(): Promise<NoteActionResult> {
   }
 
   refreshNotes(data.id);
-  return {
-    ok: true,
-    note: {
-      id: data.id,
-      title: data.title,
-      preview: previewFromText(data.body_text),
-      updatedAt: data.updated_at,
-    },
-  };
+  return { ok: true, note: toNoteListItem(data) };
 }
 
 export async function saveNote(input: unknown): Promise<NoteActionResult> {
@@ -69,11 +63,12 @@ export async function saveNote(input: unknown): Promise<NoteActionResult> {
     .from("notes")
     .update({
       title: parsed.data.title,
+      category_id: parsed.data.categoryId,
       body,
       body_text: bodyTextFromDoc(body),
     })
     .eq("id", parsed.data.id)
-    .select("id, title, body_text, updated_at")
+    .select(NOTE_LIST_COLUMNS)
     .single();
 
   if (error || !data) {
@@ -81,13 +76,36 @@ export async function saveNote(input: unknown): Promise<NoteActionResult> {
   }
 
   refreshNotes(data.id);
+  return { ok: true, note: toNoteListItem(data) };
+}
+
+export async function addNoteComment(input: unknown): Promise<NoteCommentResult> {
+  const parsed = addNoteCommentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Write a comment." };
+  }
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("note_comments")
+    .insert({
+      note_id: parsed.data.noteId,
+      comment: parsed.data.comment,
+    })
+    .select("id, comment, created_at")
+    .single();
+
+  if (error || !data) {
+    return { error: error?.message ?? "The comment could not be added." };
+  }
+
+  revalidatePath(`/notes/${parsed.data.noteId}`);
   return {
     ok: true,
-    note: {
+    comment: {
       id: data.id,
-      title: data.title,
-      preview: previewFromText(data.body_text),
-      updatedAt: data.updated_at,
+      comment: data.comment,
+      createdAt: data.created_at,
     },
   };
 }

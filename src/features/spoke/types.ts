@@ -17,6 +17,7 @@ export type FocusArea = {
   goal5y: string | null;
   sortOrder: number;
   plans: ActionPlan[];
+  openTasks: number;
 };
 
 export type SpokeDetail = {
@@ -25,6 +26,7 @@ export type SpokeDetail = {
   wheelType: Enums<"wheel_type">;
   scoreNow: number | null;
   target1y: number | null;
+  openTasks: number;
   focusAreas: FocusArea[];
 };
 

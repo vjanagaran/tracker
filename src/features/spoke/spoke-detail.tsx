@@ -17,6 +17,11 @@ function scoreCaption(spoke: SpokeDetail) {
   return `${wheelLabel(spoke.wheelType)} · ${today} today, ${year} in a year`;
 }
 
+export function taskLinkLabel(openTasks: number) {
+  if (openTasks === 0) return "Tasks for this spoke";
+  return `${openTasks} open ${openTasks === 1 ? "task" : "tasks"}`;
+}
+
 export function SpokeDetailView({ spoke }: { spoke: SpokeDetail }) {
   return (
     <div>
@@ -33,6 +38,14 @@ export function SpokeDetailView({ spoke }: { spoke: SpokeDetail }) {
           {spoke.name}
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">{scoreCaption(spoke)}</p>
+        <p className="mt-1">
+          <Link
+            href={`/tasks?node=spoke:${spoke.id}`}
+            className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-4 hover:underline"
+          >
+            {taskLinkLabel(spoke.openTasks)}
+          </Link>
+        </p>
       </header>
 
       {spoke.focusAreas.length === 0 ? (

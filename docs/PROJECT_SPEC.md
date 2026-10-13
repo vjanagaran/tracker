@@ -81,12 +81,19 @@ spoke_scores      (cycle_id, spoke_id) score_now, target_1y, target_5y — nulla
 focus_areas       current_issue, goal_1y, goal_5y
 action_plans      description + challenge (one pair), status
 
-tasks             title, tag, status, planned_start_on, target_on, completed_on,
-                  repeat_every, repeat_until, series_id
+tasks             title, description, tag, status, priority (high | medium |
+                  low | flexi, default flexi), planned_start_on +
+                  planned_start_time, target_on + target_time (times optional,
+                  and only with their day), completed_on, repeat_every,
+                  repeat_until, series_id
 task_action_plans many-to-many, optional
 task_notes        append-only, specific to that task
 
-notes             personal documents; title, rich body. No task/board/spoke link
+notes             personal documents; title, rich body, optional category_id.
+                  No task/board/spoke link
+note_categories   per-person tree for notes: name, parent_id, sort_order
+note_comments     append-only, specific to that note (labelled Comments in the
+                  UI so they are not confused with task notes)
 note_files        inline images and attached files for a note
 ```
 
@@ -105,10 +112,20 @@ Note images and attachments live in a **private** `notes` bucket. Paths are
   raises. Set `is_active = false` instead, so old cycles keep rendering.
 - `tasks.completed_on` is stamped by a trigger on status change and cleared when
   status moves away from Completed. Never write it from the client.
+- A time of day needs its date: `planned_start_time` only with
+  `planned_start_on`, `target_time` only with `target_on`. The next occurrence
+  of a repeating task keeps description, priority and both times.
+- Priority is a flag the member sets on their own task. It breaks ties in the
+  order tasks come due and is never counted, averaged or compared across people.
 - A repeating task must have `target_on`. Completing it inserts the next
   occurrence of the same series — one at a time, so the open count stays honest.
   Never write `series_id` from the client; a trigger stamps it.
-- Row-level security keys wheels, plans, tasks and notes to `user_id = auth.uid()`.
+- A note category cannot sit inside itself or one of its own subcategories —
+  a trigger raises. Names are unique among siblings, ignoring case. A note can
+  only point at a category its owner owns. Deleting a category leaves its notes
+  uncategorised; the app refuses to delete one that still has subcategories.
+- Row-level security keys wheels, plans, tasks, notes, note categories and note
+  comments to `user_id = auth.uid()`, directly or through the note.
 
 ### The one deliberate RLS bypass
 
@@ -212,8 +229,9 @@ app/
       [type]/cycles/page.tsx    cycle list, new cycle, compare two
     spoke/[spokeId]/page.tsx    focus areas + action plans + challenges
     tasks/page.tsx              the to-do list
-    notes/page.tsx              personal documents
-    notes/[noteId]/page.tsx     one note, rich text and files
+    notes/layout.tsx            category tree in the middle panel; keeps its open/closed state
+    notes/page.tsx              notes of the chosen category, in the right panel
+    notes/[noteId]/page.tsx     one note: rich text, files, comments
     boards/page.tsx             boards this member belongs to
     boards/[boardId]/page.tsx   counts dashboard + meeting calendar
   (admin)/
@@ -284,17 +302,128 @@ Open items sorted by `target_on` ascending. Columns: title, tag, what it works
 toward, target date, status. Repeat (daily, weekly, fortnightly, monthly) is
 optional; a repeating task needs a finish-by date. Completing it creates the
 next occurrence. Status is an inline control — changing it saves immediately
-and optimistically. Completed and cancelled items live behind a disclosure.
+and optimistically.
+
+Two panels, like Notes. The left one picks what the list shows, and the two
+kinds of choice combine:
+
+- **Views:** All, Overdue, Today, Tomorrow, Next 7 days, This month. All of them
+  read the finish-by date and list open tasks only; a task with no date appears
+  only under All. Today is the member's own calendar day (profile time zone if
+  set, else the browser's). Next 7 days is today through six days on. This month
+  is the whole calendar month, so it includes dates already past.
+- **Wheels, spokes and focus areas:** Wheel of Life and Wheel of Business, each
+  expanding to its spokes and their focus areas. A task sits under a focus
+  area through the plans it works toward; one task can sit under several, and a
+  spoke or wheel counts it once. A task with no plan but tagged Life or
+  Business sits under that wheel's **No focus area** row. An untagged task with
+  no plan is on no row. Inactive spokes show only while they have tasks.
+- **Completed** and **Cancelled** replace the old disclosure. They combine with a
+  tree row, not with a date view.
+
+Each row carries a plain count of tasks. Counts follow the other choices, so
+with Health chosen the date rows count Health tasks, and with Today chosen the
+tree counts what is due today. They are counts, never percentages. Choosing the
+chosen tree row again, or Clear focus, drops it. On mobile the list is the
+screen; one button opens the views and tree.
+
+**Rows.** A round checkbox completes a task (and reopens a completed one, back to
+Not Started). Completing shows a toast with Undo, except for a repeating task:
+undoing it would leave two open occurrences, so it has no Undo. Status is a
+compact chip with a menu. Dates read in words: Today, Tomorrow, `3 days overdue`,
+`Fri 16 Oct`. The optional planned start is a quiet fragment beside the chips
+(`Starts tomorrow`, `Starts Fri 16 Oct`, `Started 12 Oct`); it is absent when no
+start is set and on closed tasks, so it never takes a column. Overdue is also amber, but the words carry it. With the All view
+chosen the open list is grouped Overdue, Today, Tomorrow, Upcoming, No date; a
+date view lists flat.
+
+**Wheel chips.** Each task shows one chip per spoke it works toward, labelled
+`Life · Health` or `Business · Sales`: green for Life, navy for Business, both
+from the existing palette. A task with no plan shows its tag (`Life`,
+`Business`) and an untagged open item shows `Open item`, in neutral. The label
+carries the meaning; colour only echoes it. Chips are position, never a score.
+
+**Layouts.** List, Board, Week and Calendar, switched from the top right of the
+header on every layout, on the open view only.
+- Board: a column per open status. Drag a card to change status.
+- Week: Monday to Sunday with previous, next and this week; Overdue sits above
+  the current week and tasks with no date below it. Drag a task onto a day to
+  set its finish-by date.
+- Calendar: a month, Monday first, with previous, next and this month. Each day
+  names up to three tasks, coloured by wheel, and says `+n more`; choosing a day
+  lists its tasks underneath. Drag a task onto a day to set its finish-by date.
+  Overdue tasks from before the month and tasks with no date sit below the grid.
+  On a phone each day shows a count instead of titles.
+- Week and Calendar are date views themselves, so choosing a date row returns to
+  List.
+- Dragging needs a mouse. The status chip and the edit form do the same on
+  keyboard and touch.
+
+**Links.** The view lives in the address: `view` (`completed`, `cancelled`),
+`when`, `node` (`wheel:WOL`, `spoke:<id>`, `focus:<id>`, `unlinked:WOB`), `layout`
+(`board`, `week`) and `present=1`. Unknown values fall back to the default. The
+spoke page links to `/tasks?node=spoke:<id>` with a count of that spoke's open
+tasks, and each focus area links to its own. These are the member's own tasks and
+counts. The plan picker in the task form browses Wheel, Spoke, Focus area, Plan,
+and also searches.
+
+**Meeting mode.** One button enlarges rows and type, hides the left panel and
+the detail pane, and widens the list. `Exit meeting mode` returns. It is a
+display setting; it shares nothing and sends nothing.
+
+**Detail.** From 1280px wide, opening or adding a task shows its form and notes
+in a third column beside the list; below that it slides over as a sheet. The form
+keeps an explicit Save: a task needs a title, and a repeating one a finish-by
+date, so autosave would store half-finished tasks. The form is grouped as
+title and status, Dates (with Today, Tomorrow and In a week shortcuts), Tag, and
+Working toward, where plans are found by search or by browsing Wheel, Spoke,
+Focus area. Save stays pinned at the bottom while the form scrolls.
+
+**Description, times and priority.** A task has an optional description (plain
+text, up to 4,000 characters). Planning to start and Finish by each take an
+optional time beside the day; the time input stays off until there is a day, and
+clearing the day clears the time. A time is shown on the row after the day
+(`Today · 5:30 pm`) and is left off an overdue day, where the words already say
+enough. It does not make a task overdue sooner, and nothing reminds the member
+of it: reminders are notifications, which this product does not have. Finish by
+also offers Today, Tomorrow, This weekend and Next week.
+
+Priority is **High**, **Medium**, **Low** or **Flexi**, each with a flag and a
+colour (red, amber, blue, grey) and always its name beside it. Flexi is the
+default and means no pressure on when; it shows nothing on a row, so only a
+chosen priority adds to it. Tasks come due by day, then time (an untimed task
+leads its day), then priority, then title. A flexi task due earlier still comes
+before a high one due later. A small marker on the row shows that a description
+exists.
+
+**Delete.** Below the notes, after a separator, a red **Delete task** button
+asks for confirmation and removes that one task with its notes and plan links.
+Deleting an open repeating task ends the repeat, since occurrences are created
+when one is completed; the dialog says so and points to completing it instead.
+Cancelled is the way to keep an item on record.
 
 This screen is shared on a call, so it must be legible at a distance: generous
 row height, no truncation of task titles, no horizontal scroll on a laptop.
 
 ### Notes (`/notes`, `/notes/[noteId]`)
-Private document store. Unlinked from tasks, spokes and boards. List on the
-left, editor on the right. Rich text, inline images, and file attachments.
-Empty copy: **Personal documents stay here.** Task notes stay on the task.
+Private document store. Unlinked from tasks, spokes and boards. Rich text,
+inline images, and file attachments. Empty copy: **Personal documents stay
+here.** Task notes stay on the task.
 
-On mobile the list is the screen; open a note for the editor. Desktop sidebar
+Three panels. The middle one is the category tree: **All notes** and **No
+category** first, then the person's own categories, siblings in the order they
+set (move up, move down), each with expand and collapse and a count that
+includes its subcategories. A category menu adds a subcategory, edits (rename
+or move inside another category), reorders and deletes. Choosing a category
+lists its notes, with those of its subcategories, in the right panel; choosing
+a note opens it there. A note has at most one category, picked from the
+categories already made; it is optional.
+
+A note carries **Comments**: short dated entries added under the note, never
+edited or removed, labelled Comments here and Notes on tasks.
+
+On mobile the tree is the screen; open a category for its notes, then a note
+for the editor, with a back link at each step. Desktop sidebar
 places Notes next to Tasks. Mobile tabs: Dashboard · Tasks · Notes · Wheel · Board.
 Wheel is Life and Business with an in-page switch.
 

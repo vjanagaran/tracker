@@ -9,6 +9,10 @@ export function formatUpdated(value: string) {
   return format(parseISO(value), "d MMM yyyy");
 }
 
+export function formatCommentTime(value: string) {
+  return format(parseISO(value), "d MMM yyyy, h:mm a");
+}
+
 export function formatFileSize(bytes: number) {
   if (bytes < 1024) {
     return `${bytes} B`;

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { OPEN_STATUSES } from "@/features/tasks/types";
 import type { ActionPlan, FocusArea, SpokeDetail } from "./types";
 
 type Client = SupabaseClient<Database>;
@@ -89,6 +90,52 @@ export async function loadSpokeDetail(
     }
   }
 
+  // Open tasks working toward this spoke, counted once however many plans they link.
+  const focusByPlan = new Map<string, string>();
+  for (const [focusId, plans] of plansByFocus) {
+    for (const plan of plans) {
+      focusByPlan.set(plan.id, focusId);
+    }
+  }
+  const openByFocus = new Map<string, Set<string>>();
+  const openAll = new Set<string>();
+
+  if (focusByPlan.size > 0) {
+    const { data: links, error: linkError } = await supabase
+      .from("task_action_plans")
+      .select("task_id, action_plan_id")
+      .in("action_plan_id", [...focusByPlan.keys()]);
+
+    if (linkError) {
+      throw new Error(linkError.message);
+    }
+
+    const taskIds = [...new Set((links ?? []).map((link) => link.task_id))];
+    if (taskIds.length > 0) {
+      const { data: openRows, error: openError } = await supabase
+        .from("tasks")
+        .select("id")
+        .in("id", taskIds)
+        .in("status", OPEN_STATUSES);
+
+      if (openError) {
+        throw new Error(openError.message);
+      }
+
+      const open = new Set((openRows ?? []).map((row) => row.id));
+      for (const link of links ?? []) {
+        const focusId = focusByPlan.get(link.action_plan_id);
+        if (!focusId || !open.has(link.task_id)) {
+          continue;
+        }
+        openAll.add(link.task_id);
+        const forFocus = openByFocus.get(focusId) ?? new Set<string>();
+        forFocus.add(link.task_id);
+        openByFocus.set(focusId, forFocus);
+      }
+    }
+  }
+
   const focusAreas: FocusArea[] = (focusRows ?? []).map((row) => ({
     id: row.id,
     currentIssue: row.current_issue,
@@ -96,6 +143,7 @@ export async function loadSpokeDetail(
     goal5y: row.goal_5y,
     sortOrder: row.sort_order,
     plans: plansByFocus.get(row.id) ?? [],
+    openTasks: openByFocus.get(row.id)?.size ?? 0,
   }));
 
   return {
@@ -104,6 +152,7 @@ export async function loadSpokeDetail(
     wheelType: wheel.type,
     scoreNow,
     target1y,
+    openTasks: openAll.size,
     focusAreas,
   };
 }

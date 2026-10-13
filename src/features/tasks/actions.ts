@@ -8,8 +8,10 @@ import { OPEN_STATUSES, type TaskItem, type TaskNote } from "./types";
 import {
   addTaskNoteSchema,
   createTaskSchema,
+  deleteTaskSchema,
   updateTaskSchema,
   updateTaskStatusSchema,
+  updateTaskTargetSchema,
 } from "./schema";
 
 type TaskInsert = Omit<Database["public"]["Tables"]["tasks"]["Insert"], "completed_on">;
@@ -40,6 +42,34 @@ function emptyToNull(value: string | null | undefined) {
 function refreshTasks() {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+}
+
+/** What the member writes and chooses about the task itself. */
+function contentFields(data: {
+  title: string;
+  description?: string | null;
+  tag?: TaskItem["tag"];
+  status: TaskItem["status"];
+  priority?: TaskItem["priority"];
+  plannedStartOn?: string | null;
+  plannedStartTime?: string | null;
+  targetOn?: string | null;
+  targetTime?: string | null;
+}) {
+  const plannedStartOn = emptyToNull(data.plannedStartOn);
+  const targetOn = emptyToNull(data.targetOn);
+  return {
+    title: data.title,
+    description: emptyToNull(data.description),
+    tag: data.tag ?? null,
+    status: data.status,
+    priority: data.priority ?? "flexi",
+    planned_start_on: plannedStartOn,
+    // A time belongs to its day; with no day there is no time.
+    planned_start_time: plannedStartOn ? emptyToNull(data.plannedStartTime) : null,
+    target_on: targetOn,
+    target_time: targetOn ? emptyToNull(data.targetTime) : null,
+  };
 }
 
 function repeatFields(data: {
@@ -163,11 +193,7 @@ export async function createTask(input: unknown): Promise<TaskActionResult> {
   const { supabase, user } = await requireUser();
   const row = {
     user_id: user.id,
-    title: parsed.data.title,
-    tag: parsed.data.tag ?? null,
-    status: parsed.data.status,
-    planned_start_on: emptyToNull(parsed.data.plannedStartOn),
-    target_on: emptyToNull(parsed.data.targetOn),
+    ...contentFields(parsed.data),
     ...repeatFields(parsed.data),
   } satisfies TaskInsert;
   const { data, error } = await supabase
@@ -200,11 +226,7 @@ export async function updateTask(input: unknown): Promise<TaskActionResult> {
 
   const { supabase } = await requireUser();
   const row = {
-    title: parsed.data.title,
-    tag: parsed.data.tag ?? null,
-    status: parsed.data.status,
-    planned_start_on: emptyToNull(parsed.data.plannedStartOn),
-    target_on: emptyToNull(parsed.data.targetOn),
+    ...contentFields(parsed.data),
     ...repeatFields(parsed.data),
   } satisfies TaskUpdate;
   const { data, error } = await supabase
@@ -286,6 +308,80 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
 
   refreshTasks();
   return { ok: true, task, spawned };
+}
+
+/** Moves a task to another finish-by day. Nothing else about it changes. */
+export async function updateTaskTarget(input: unknown): Promise<TaskActionResult> {
+  const parsed = updateTaskTargetSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "The day could not be saved." };
+  }
+
+  const { supabase } = await requireUser();
+  const row = { target_on: parsed.data.targetOn } satisfies TaskUpdate;
+  const { data, error } = await supabase
+    .from("tasks")
+    .update(row)
+    .eq("id", parsed.data.id)
+    .select(TASK_COLUMNS)
+    .single();
+
+  if (error || !data) {
+    return { error: error?.message ?? "The day could not be saved." };
+  }
+
+  const [{ data: notes }, { data: links }] = await Promise.all([
+    supabase
+      .from("task_notes")
+      .select("id, note, created_at")
+      .eq("task_id", data.id)
+      .order("created_at", { ascending: true }),
+    supabase.from("task_action_plans").select("action_plan_id").eq("task_id", data.id),
+  ]);
+
+  refreshTasks();
+  return {
+    ok: true,
+    task: mapTaskRow(
+      data,
+      (links ?? []).map((link) => link.action_plan_id),
+      (notes ?? []).map((note) => ({
+        id: note.id,
+        note: note.note,
+        createdAt: note.created_at,
+      })),
+    ),
+  };
+}
+
+export type TaskDeleteResult = { error: string } | { ok: true };
+
+/**
+ * Deletes one task. Its notes and plan links go with it. A repeating task
+ * stops here: occurrences are made when one is completed, so none is waiting.
+ */
+export async function deleteTask(input: unknown): Promise<TaskDeleteResult> {
+  const parsed = deleteTaskSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "That task could not be found." };
+  }
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", parsed.data.id)
+    .select("id");
+
+  if (error) {
+    return { error: error.message };
+  }
+  if (!data || data.length === 0) {
+    return { error: "That task is already gone. Refresh the page to see the current list." };
+  }
+
+  refreshTasks();
+  return { ok: true };
 }
 
 export async function addTaskNote(input: unknown): Promise<NoteActionResult> {

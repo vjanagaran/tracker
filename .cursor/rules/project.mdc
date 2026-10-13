@@ -17,7 +17,8 @@ and Wheel of Business practice on a fortnightly review cycle. Full detail in
 
 2. **Wheels, plans, tasks and notes belong to the person, not the board.** Never add a
    `board_id` to `wheels`, `spokes`, `wheel_cycles`, `spoke_scores`,
-   `focus_areas`, `action_plans`, `tasks`, `notes` or `note_files`. Members carry
+   `focus_areas`, `action_plans`, `tasks`, `notes`, `note_files`, `note_categories`
+   or `note_comments`. Members carry
    their history between boards, and that only works because the board does not own it.
 
 3. **Everything below `wheels`, plus `notes`, is private to its owner.** No member,

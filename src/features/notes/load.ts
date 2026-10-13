@@ -2,9 +2,33 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/lib/database.types";
 import { previewFromText } from "./body";
 import { SIGNED_URL_SECONDS } from "./schema";
-import type { NoteDetail, NoteFile, NoteListItem } from "./types";
+import type {
+  NoteCategory,
+  NoteComment,
+  NoteDetail,
+  NoteFile,
+  NoteListItem,
+} from "./types";
 
 type Client = SupabaseClient<Database>;
+
+export const NOTE_LIST_COLUMNS = "id, title, category_id, body_text, updated_at" as const;
+
+export function toNoteListItem(row: {
+  id: string;
+  title: string;
+  category_id: string | null;
+  body_text: string;
+  updated_at: string;
+}): NoteListItem {
+  return {
+    id: row.id,
+    title: row.title,
+    categoryId: row.category_id,
+    preview: previewFromText(row.body_text),
+    updatedAt: row.updated_at,
+  };
+}
 
 export async function loadNoteList(
   client: Client,
@@ -13,7 +37,7 @@ export async function loadNoteList(
 ): Promise<NoteListItem[]> {
   let query = client
     .from("notes")
-    .select("id, title, body_text, updated_at")
+    .select(NOTE_LIST_COLUMNS)
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -27,12 +51,43 @@ export async function loadNoteList(
     throw new Error(error.message);
   }
 
+  return (data ?? []).map(toNoteListItem);
+}
+
+export async function loadCategories(client: Client, userId: string): Promise<NoteCategory[]> {
+  const { data, error } = await client
+    .from("note_categories")
+    .select("id, parent_id, name, sort_order")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   return (data ?? []).map((row) => ({
     id: row.id,
-    title: row.title,
-    preview: previewFromText(row.body_text),
-    updatedAt: row.updated_at,
+    parentId: row.parent_id,
+    name: row.name,
+    sortOrder: row.sort_order,
   }));
+}
+
+export async function loadNoteCategoryIds(
+  client: Client,
+  userId: string,
+): Promise<{ categoryId: string | null }[]> {
+  const { data, error } = await client
+    .from("notes")
+    .select("category_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => ({ categoryId: row.category_id }));
 }
 
 export async function loadNote(
@@ -42,7 +97,7 @@ export async function loadNote(
 ): Promise<NoteDetail | null> {
   const { data, error } = await client
     .from("notes")
-    .select("id, title, body, updated_at")
+    .select("id, title, category_id, body, updated_at")
     .eq("user_id", userId)
     .eq("id", noteId)
     .maybeSingle();
@@ -54,15 +109,38 @@ export async function loadNote(
     return null;
   }
 
-  const files = await loadNoteFiles(client, noteId);
+  const [files, comments] = await Promise.all([
+    loadNoteFiles(client, noteId),
+    loadNoteComments(client, noteId),
+  ]);
 
   return {
     id: data.id,
     title: data.title,
+    categoryId: data.category_id,
     body: data.body,
     updatedAt: data.updated_at,
     files,
+    comments,
   };
+}
+
+async function loadNoteComments(client: Client, noteId: string): Promise<NoteComment[]> {
+  const { data, error } = await client
+    .from("note_comments")
+    .select("id, comment, created_at")
+    .eq("note_id", noteId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    comment: row.comment,
+    createdAt: row.created_at,
+  }));
 }
 
 async function loadNoteFiles(client: Client, noteId: string): Promise<NoteFile[]> {

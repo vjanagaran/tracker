@@ -250,10 +250,85 @@ export type Database = {
           },
         ]
       }
+      note_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "note_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_categories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          note_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          note_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_comments_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           body: Json
           body_text: string
+          category_id: string | null
           created_at: string
           id: string
           title: string
@@ -263,6 +338,7 @@ export type Database = {
         Insert: {
           body?: Json
           body_text?: string
+          category_id?: string | null
           created_at?: string
           id?: string
           title?: string
@@ -272,6 +348,7 @@ export type Database = {
         Update: {
           body?: Json
           body_text?: string
+          category_id?: string | null
           created_at?: string
           id?: string
           title?: string
@@ -279,6 +356,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "note_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notes_user_id_fkey"
             columns: ["user_id"]
@@ -497,7 +581,10 @@ export type Database = {
         Row: {
           completed_on: string | null
           created_at: string
+          description: string | null
           id: string
+          planned_start_time: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
           planned_start_on: string | null
           repeat_every: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until: string | null
@@ -505,6 +592,7 @@ export type Database = {
           status: Database["public"]["Enums"]["task_status"]
           tag: Database["public"]["Enums"]["task_tag"] | null
           target_on: string | null
+          target_time: string | null
           title: string
           updated_at: string
           user_id: string
@@ -512,7 +600,10 @@ export type Database = {
         Insert: {
           completed_on?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          planned_start_time?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
           planned_start_on?: string | null
           repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until?: string | null
@@ -520,6 +611,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           tag?: Database["public"]["Enums"]["task_tag"] | null
           target_on?: string | null
+          target_time?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -527,7 +619,10 @@ export type Database = {
         Update: {
           completed_on?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          planned_start_time?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
           planned_start_on?: string | null
           repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until?: string | null
@@ -535,6 +630,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           tag?: Database["public"]["Enums"]["task_tag"] | null
           target_on?: string | null
+          target_time?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -697,6 +793,7 @@ export type Database = {
       member_state: "active" | "inactive"
       note_file_kind: "inline" | "attachment"
       plan_status: "Active" | "Completed" | "Dropped"
+      task_priority: "high" | "medium" | "low" | "flexi"
       task_repeat: "daily" | "weekly" | "fortnightly" | "monthly"
       task_status:
         | "Not Started"
