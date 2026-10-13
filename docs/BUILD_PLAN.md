@@ -3,8 +3,9 @@
 Work the phases in order. Each has a definition of done — do not move on until
 it holds. Read `docs/PROJECT_SPEC.md` first.
 
-**Status (18 Sep 2026):** phases 0–9 are implemented in the repo. Remaining
-work is listed at the bottom; do not reopen a phase without a reason.
+**Status (13 Oct 2026):** phases 0–14 are implemented in the repo. Phases 11–14
+record work done after the original plan. Remaining work is listed at the
+bottom; do not reopen a phase without a reason.
 
 ---
 
@@ -85,7 +86,9 @@ to end — two focus areas, six action plans, each with its challenge.
 - [x] Completed and cancelled behind a disclosure
 - [x] Legible when screen-shared: no truncated titles, no horizontal scroll
 
-There is no task delete. That was not in the spec.
+There was no task delete when this phase shipped. Duplicates turned up in real
+use, so a member can now delete a task (phase 12). Cancelled is still the way to
+close one that stopped mattering.
 
 **Done when:** status changes persist and `completed_on` is stamped by the
 database. Confirm by moving a task to Completed and back and checking the column
@@ -103,7 +106,8 @@ clears.
 - [x] Invite server action using the secret key — server-only, zod-validated
 
 Also shipped: meeting agenda field and edit UI; resend invite; add an existing
-member to a board. Meeting notes are set at create only. Meeting status
+member to a board; more than one chairman per board (a vice-chairman is a second
+chairman with the same access; the app refuses to leave a board with none). Meeting notes are set at create only. Meeting status
 (Completed / Cancelled) has no UI yet.
 
 **Done when:** two members on the same board see identical counts, and neither
@@ -127,7 +131,7 @@ product — give it the polish.
 ## Phase 7 — PWA and mobile
 
 - [x] `manifest.json` with maskable icon entries (name: Holistic Growth Tracker / HGT)
-- [ ] Icon PNG files at `public/icons/` (192, 512, maskable, apple-touch)
+- [x] Icon PNG files at `public/icons/` (192, 512, maskable, apple-touch)
 - [x] `src/sw.ts` via `@serwist/next`, disabled in dev
 - [x] Precache the shell; **exclude every authenticated route and Supabase call**
 - [x] Offline fallback page
@@ -151,7 +155,9 @@ fallback, and every screen works one-handed at 375px.
 - [x] Error boundaries and empty states on every route
 - [ ] Run the RLS suite in CI
 
-`npm test` covers the rate limiter. `npm run test:rls` is the live-project
+`npm test` covers the rate limiter, the morning-note composer, note categories
+and drag, task scope and view logic, and the wheel label and PDF helpers.
+`npm run test:rls` is the live-project
 suite; `npx supabase test db` is the pgTAP companion.
 
 **Done when:** the RLS suite passes and a deliberate attempt to read another
@@ -186,18 +192,74 @@ their own day rather than the server's.
 - [x] Compose: toward spokes, due today first, overdue as Later, meeting only if today
 - [x] Skip send when the day is empty
 - [x] Subject from spokes, never from a count
-- [x] Resend + Vercel cron at 07:00 local via an hourly tick
+- [x] Resend + `/api/morning-note` built for an hourly tick that sends at 07:00 local
+- [ ] An hourly caller. The Vercel cron was dropped (Hobby allows daily only), so
+      no morning note is sent until Pro or an outside scheduler calls the route
 - [x] Fourth secret-key use documented: cron reads the member's own rows
 
 **Done when:** an opted-in member with a task due today in Asia/Kolkata receives
-one mail at 07:00 IST that names the spoke, and a quiet day sends nothing.
+one mail at 07:00 IST that names the spoke, and a quiet day sends nothing. The
+code meets this; the schedule that triggers it does not exist yet.
+
+---
+
+## Phase 11 — Notes
+
+- [x] Private notes: rich text (Tiptap), inline images, file attachments in a
+      private `notes` bucket
+- [x] Category tree per person, with optional description, sibling order and
+      subcategories; a trigger blocks cycles and duplicate sibling names
+- [x] Three-panel layout on desktop; tree, then list, then editor on mobile
+- [x] Drag a note onto a category to move it, with Undo; the note's own category
+      picker does the same without a mouse
+- [x] Comments: dated, append-only entries on a note
+
+No link to tasks, spokes or boards, on purpose.
+
+---
+
+## Phase 12 — Tasks workspace
+
+- [x] Scope panel: date views, plus Wheel, Spoke, Focus area tree with counts
+- [x] Completed and Cancelled as views that combine with a tree row
+- [x] List, Board, Week and Calendar layouts, with drag to change status or date
+- [x] Detail pane at 1280px and up; a sheet below that
+- [x] Meeting mode: larger rows, hidden panels, a display setting only
+- [x] Description, optional times, priority (High, Medium, Low, Flexi)
+- [x] Repeating tasks: completing one creates the next occurrence
+- [x] Delete task, with confirmation, for duplicates
+- [x] The view lives in the address, so it can be bookmarked
+
+---
+
+## Phase 13 — Wheel table and PDF
+
+- [x] Table tab beside Chart: scores, goals, plans, challenges and a task tally
+      per plan, on one sheet
+- [x] Download PDF: landscape A4, table pages then a radar page, with title,
+      date and page numbers, built in the browser
+- [x] Tests for the PDF title, subtitle, filename and page label
+
+Tasks and notes have no PDF. Sharing outside a screen share is by this file.
+
+---
+
+## Phase 14 — Shell and profile
+
+- [x] Product renamed Holistic Growth Tracker (HGT)
+- [x] Pinned sidebar with profile link, board list and superadmin link; collapses
+      to an icon rail, remembered per browser
+- [x] Invite a friend from Profile: email only, no board
+- [x] Chairman mark, email and phone on the board counts table
+- [x] Life spokes reordered: Giving back seventh, Spiritual pursuits last
 
 ---
 
 ## Remaining
 
-1. Add the PWA icon files the manifest already names.
-2. Run Lighthouse (installable + accessibility ≥ 95) and keep the result.
-3. Confirm the Vercel (or equivalent) deploy and env vars.
-4. Wire `npm run test:rls` into CI once a secret-bearing runner exists.
-5. Decide whether `/radar` stays public once the app is in members' hands.
+1. Run Lighthouse (installable + accessibility ≥ 95) and keep the result.
+2. Confirm the Vercel (or equivalent) deploy and env vars.
+3. Wire `npm run test:rls` into CI once a secret-bearing runner exists.
+4. Decide whether `/radar` stays public once the app is in members' hands.
+5. Give `/api/morning-note` an hourly caller, or decide the morning note waits.
+6. Decide whether the `done/total` plan tally stays (see spec section 10).

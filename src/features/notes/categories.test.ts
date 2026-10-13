@@ -14,12 +14,14 @@ import {
   visibleCategories,
 } from "./categories.ts";
 
-const categories = [
-  { id: "people", parentId: null, name: "People", sortOrder: 1 },
-  { id: "company", parentId: null, name: "Company", sortOrder: 0 },
-  { id: "pvt", parentId: "company", name: "Private limited", sortOrder: 1 },
-  { id: "firm", parentId: "company", name: "Partnership", sortOrder: 0 },
-  { id: "tax", parentId: "pvt", name: "Tax", sortOrder: 0 },
+import type { NoteCategory } from "./types.ts";
+
+const categories: NoteCategory[] = [
+  { id: "people", parentId: null, name: "People", description: null, sortOrder: 1 },
+  { id: "company", parentId: null, name: "Company", description: null, sortOrder: 0 },
+  { id: "pvt", parentId: "company", name: "Private limited", description: null, sortOrder: 1 },
+  { id: "firm", parentId: "company", name: "Partnership", description: null, sortOrder: 0 },
+  { id: "tax", parentId: "pvt", name: "Tax", description: null, sortOrder: 0 },
 ];
 
 describe("category tree", () => {
@@ -38,8 +40,8 @@ describe("category tree", () => {
 
   it("breaks a sort-order tie by name", () => {
     const tree = buildCategoryTree([
-      { id: "b", parentId: null, name: "Beta", sortOrder: 0 },
-      { id: "a", parentId: null, name: "Alpha", sortOrder: 0 },
+      { id: "b", parentId: null, name: "Beta", description: null, sortOrder: 0 },
+      { id: "a", parentId: null, name: "Alpha", description: null, sortOrder: 0 },
     ]);
     assert.deepEqual(
       tree.map((node) => node.id),

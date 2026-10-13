@@ -71,7 +71,7 @@ function scopeNote(scope: TaskScope, layout: TaskLayout) {
   if (layout === "week" || layout === "calendar") {
     return "Drag a task onto a day to change its finish-by date.";
   }
-  return "Earliest commitment first. This is the list you share when it is your turn.";
+  return "Earliest commitment first.";
 }
 
 export function TaskWorkspace({

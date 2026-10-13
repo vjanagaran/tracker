@@ -37,14 +37,16 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 ```
 
-`SUPABASE_SECRET_KEY` is server-only. It is used by the invite actions, the
-admin roster loader (email and invite-accepted), and the RLS test script. Never
-import it into a client component or a module a client can reach.
+`SUPABASE_SECRET_KEY` is server-only. It is used by the invite actions (including
+invite a friend), the admin roster loader (email and invite-accepted), the
+morning-note run, and the RLS test script. Never import it into a client
+component or a module a client can reach. The morning note also needs
+`RESEND_API_KEY`, `MORNING_NOTE_FROM` and `CRON_SECRET`; see `.env.example`.
 
 ## Tests
 
 ```bash
-npm test              # rate limiter
+npm test              # unit tests: rate limiter, morning note, notes, tasks, wheel and PDF
 npm run test:rls      # live-project RLS suite (needs .env)
 npx supabase test db  # pgTAP companion
 ```
@@ -53,5 +55,6 @@ npx supabase test db  # pgTAP companion
 
 1. Every score is self-rated. Nothing is derived or averaged.
 2. Wheels, plans and tasks belong to the person, not the board.
-3. Everything below `wheels` is private to its owner. The board sees a roster,
-   a calendar, and two counts per member.
+3. Everything below `wheels`, plus notes, is private to its owner. The board
+   sees a roster, a calendar, and two counts per member. A member shares a
+   wheel by screen share or by downloading a PDF.

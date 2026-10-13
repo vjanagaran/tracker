@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createCategory, updateCategory } from "./category-actions";
-import { categoryOptions, CATEGORY_MAX_LENGTH, descendantIds } from "./categories";
+import {
+  categoryOptions,
+  CATEGORY_DESCRIPTION_MAX_LENGTH,
+  CATEGORY_MAX_LENGTH,
+  descendantIds,
+} from "./categories";
 import type { NoteCategory } from "./types";
 
 const TOP_LEVEL = "top";
@@ -70,6 +76,7 @@ function CategoryForm({
 }) {
   const editing = state.mode === "edit";
   const [name, setName] = useState(editing ? state.category.name : "");
+  const [description, setDescription] = useState(editing ? (state.category.description ?? "") : "");
   const [parentId, setParentId] = useState<string | null>(
     editing ? state.category.parentId : state.parentId,
   );
@@ -90,8 +97,8 @@ function CategoryForm({
     setPending(true);
     setError(null);
     const result = editing
-      ? await updateCategory({ id: state.category.id, name, parentId })
-      : await createCategory({ name, parentId });
+      ? await updateCategory({ id: state.category.id, name, description, parentId })
+      : await createCategory({ name, description, parentId });
     setPending(false);
     if ("error" in result) {
       setError(result.error);
@@ -106,7 +113,7 @@ function CategoryForm({
         <DialogTitle>{editing ? "Edit category" : "New category"}</DialogTitle>
         <DialogDescription>
           {editing
-            ? "Rename it or move it under another category."
+            ? "Rename it, say what belongs in it, or move it under another category."
             : "Categories group your notes. Put one inside another to make a subcategory."}
         </DialogDescription>
       </DialogHeader>
@@ -120,6 +127,19 @@ function CategoryForm({
           autoComplete="off"
           autoFocus
           onChange={(event) => setName(event.target.value)}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="category-description">Description</Label>
+        <Textarea
+          id="category-description"
+          value={description}
+          rows={3}
+          maxLength={CATEGORY_DESCRIPTION_MAX_LENGTH}
+          placeholder="What belongs here. Optional."
+          className="px-3 py-2.5"
+          onChange={(event) => setDescription(event.target.value)}
         />
       </div>
 

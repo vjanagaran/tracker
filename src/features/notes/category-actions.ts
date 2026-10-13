@@ -15,18 +15,20 @@ export type CategoryDoneResult = { error: string } | { ok: true };
 
 type Client = Awaited<ReturnType<typeof requireUser>>["supabase"];
 
-const CATEGORY_COLUMNS = "id, parent_id, name, sort_order" as const;
+const CATEGORY_COLUMNS = "id, parent_id, name, description, sort_order" as const;
 
 function toCategory(row: {
   id: string;
   parent_id: string | null;
   name: string;
+  description: string | null;
   sort_order: number;
 }): NoteCategory {
   return {
     id: row.id,
     parentId: row.parent_id,
     name: row.name,
+    description: row.description,
     sortOrder: row.sort_order,
   };
 }
@@ -77,6 +79,7 @@ export async function createCategory(input: unknown): Promise<CategoryActionResu
       user_id: user.id,
       parent_id: parsed.data.parentId,
       name: parsed.data.name,
+      description: parsed.data.description || null,
       sort_order: next.order,
     })
     .select(CATEGORY_COLUMNS)
@@ -108,8 +111,14 @@ export async function updateCategory(input: unknown): Promise<CategoryActionResu
     return { error: currentError?.message ?? "That category no longer exists." };
   }
 
-  const changes: { name: string; parent_id: string | null; sort_order?: number } = {
+  const changes: {
+    name: string;
+    description: string | null;
+    parent_id: string | null;
+    sort_order?: number;
+  } = {
     name: parsed.data.name,
+    description: parsed.data.description || null,
     parent_id: parsed.data.parentId,
   };
 

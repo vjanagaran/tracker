@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Json } from "@/lib/database.types";
-import { CATEGORY_MAX_LENGTH } from "./categories";
+import { CATEGORY_DESCRIPTION_MAX_LENGTH, CATEGORY_MAX_LENGTH } from "./categories";
 
 export const NOTE_BUCKET = "notes";
 export const FILE_MAX_BYTES = 20 * 1024 * 1024;
@@ -30,6 +30,11 @@ export const updateNoteSchema = z.object({
   categoryId: z.string().uuid().nullable(),
 });
 
+export const moveNoteSchema = z.object({
+  id: z.string().uuid(),
+  categoryId: z.string().uuid().nullable(),
+});
+
 export const noteIdSchema = z.object({
   id: z.string().uuid(),
 });
@@ -44,14 +49,23 @@ const categoryName = z
       .max(CATEGORY_MAX_LENGTH, "Keep the name to 60 characters."),
   );
 
+const categoryDescription = z
+  .string()
+  .trim()
+  .max(CATEGORY_DESCRIPTION_MAX_LENGTH, "Keep the description to 500 characters.")
+  .nullable()
+  .optional();
+
 export const createCategorySchema = z.object({
   name: categoryName,
+  description: categoryDescription,
   parentId: z.string().uuid().nullable(),
 });
 
 export const updateCategorySchema = z.object({
   id: z.string().uuid(),
   name: categoryName,
+  description: categoryDescription,
   parentId: z.string().uuid().nullable(),
 });
 

@@ -6,6 +6,7 @@ export type NoteCategory = {
   id: string;
   parentId: string | null;
   name: string;
+  description: string | null;
   sortOrder: number;
 };
 

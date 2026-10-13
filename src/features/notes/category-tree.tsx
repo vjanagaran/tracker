@@ -11,7 +11,8 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
+import { toast } from "sonner";
 import { cn } from "cn";
 import {
   AlertDialog,
@@ -27,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CategoryDialog, type CategoryDialogState } from "./category-dialog";
 import { deleteCategory, moveCategory } from "./category-actions";
+import { moveNote } from "./actions";
+import { isNoteDrag, readNoteDrag } from "./note-drag";
 import {
   buildCategoryTree,
   SCOPE_ALL,
@@ -36,6 +39,9 @@ import {
   type NoteScope,
 } from "./categories";
 import type { NoteCategory, NoteCategoryNode } from "./types";
+
+const NO_CATEGORY_KEY = "__none__";
+const DROP_HIGHLIGHT = "bg-accent ring-2 ring-primary/30";
 
 type Counts = {
   all: number;
@@ -57,6 +63,8 @@ export function CategoryTree({
   const [removing, setRemoving] = useState<NoteCategory | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The row a dragged note is over: a category id, or NO_CATEGORY_KEY.
+  const [dropOver, setDropOver] = useState<string | null>(null);
 
   const tree = buildCategoryTree(categories);
   const rows = visibleCategories(tree, collapsed);
@@ -85,6 +93,53 @@ export function CategoryTree({
       next.delete(id);
       return next;
     });
+  }
+
+  async function dropNote(event: DragEvent, categoryId: string | null) {
+    event.preventDefault();
+    setDropOver(null);
+    const note = readNoteDrag(event);
+    if (!note || note.categoryId === categoryId) {
+      return;
+    }
+    const target = categoryId
+      ? (categories.find((category) => category.id === categoryId)?.name ?? "that category")
+      : "No category";
+    const result = await moveNote({ id: note.id, categoryId });
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(`Note moved to ${target}.`, {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void moveNote({ id: note.id, categoryId: note.categoryId }).then((undone) => {
+            if ("error" in undone) {
+              toast.error(undone.error);
+            }
+          });
+        },
+      },
+    });
+  }
+
+  /** Handlers that make a row accept a dragged note. */
+  function dropTarget(key: string, categoryId: string | null) {
+    return {
+      onDragOver: (event: DragEvent) => {
+        if (isNoteDrag(event)) {
+          event.preventDefault();
+          setDropOver(key);
+        }
+      },
+      onDragLeave: (event: DragEvent) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setDropOver((current) => (current === key ? null : current));
+        }
+      },
+      onDrop: (event: DragEvent) => void dropNote(event, categoryId),
+    };
   }
 
   async function onMove(id: string, direction: "up" | "down") {
@@ -124,6 +179,8 @@ export function CategoryTree({
           label="No category"
           count={counts.none}
           active={scope?.kind === "none"}
+          dragOver={dropOver === NO_CATEGORY_KEY}
+          {...dropTarget(NO_CATEGORY_KEY, null)}
         />
       </ul>
 
@@ -157,6 +214,8 @@ export function CategoryTree({
                 count={counts.byCategory[node.id] ?? 0}
                 active={scope?.kind === "category" && scope.id === node.id}
                 collapsed={collapsed.has(node.id)}
+                dragOver={dropOver === node.id}
+                dropHandlers={dropTarget(node.id, node.id)}
                 onToggle={() => toggle(node.id)}
                 onAddChild={() => {
                   expand(node.id);
@@ -217,14 +276,27 @@ function ScopeRow({
   label,
   count,
   active,
+  dragOver = false,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   href: string;
   label: string;
   count: number;
   active: boolean;
+  dragOver?: boolean;
+  onDragOver?: (event: DragEvent) => void;
+  onDragLeave?: (event: DragEvent) => void;
+  onDrop?: (event: DragEvent) => void;
 }) {
   return (
-    <li>
+    <li
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={cn("rounded-md", dragOver ? DROP_HIGHLIGHT : null)}
+    >
       <Link href={href} aria-current={active ? "page" : undefined} className={rowClass(active)}>
         <span className="min-w-0 break-words">{label}</span>
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{count}</span>
@@ -239,6 +311,8 @@ function CategoryRow({
   count,
   active,
   collapsed,
+  dragOver,
+  dropHandlers,
   onToggle,
   onAddChild,
   onEdit,
@@ -248,6 +322,12 @@ function CategoryRow({
   node: NoteCategoryNode;
   categories: NoteCategory[];
   count: number;
+  dragOver: boolean;
+  dropHandlers: {
+    onDragOver: (event: DragEvent) => void;
+    onDragLeave: (event: DragEvent) => void;
+    onDrop: (event: DragEvent) => void;
+  };
   active: boolean;
   collapsed: boolean;
   onToggle: () => void;
@@ -260,7 +340,11 @@ function CategoryRow({
   const { index, count: siblings } = siblingPosition(categories, node.id);
 
   return (
-    <li className="flex items-center" style={{ paddingLeft: `${node.depth * 14}px` }}>
+    <li
+      className={cn("flex items-center rounded-md", dragOver ? DROP_HIGHLIGHT : null)}
+      style={{ paddingLeft: `${node.depth * 14}px` }}
+      {...dropHandlers}
+    >
       {hasChildren ? (
         <button
           type="button"
@@ -280,6 +364,7 @@ function CategoryRow({
       )}
       <Link
         href={`/notes?category=${node.id}`}
+        title={node.description ?? undefined}
         aria-current={active ? "page" : undefined}
         className={rowClass(active)}
       >

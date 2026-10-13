@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/rate-limit.test.ts src/features/morning-note/compose.test.ts src/features/notes/categories.test.ts src/features/tasks/scope.test.ts src/features/tasks/view.test.ts src/features/wheel/labels.test.ts src/features/wheel/pdf-title.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/rate-limit.test.ts src/features/morning-note/compose.test.ts src/features/notes/categories.test.ts src/features/notes/note-drag.test.ts src/features/tasks/scope.test.ts src/features/tasks/view.test.ts src/features/wheel/labels.test.ts src/features/wheel/pdf-title.test.ts",
     "test:rls": "node --experimental-strip-types --no-warnings scripts/rls-suite.ts"
   },
   "dependencies": {

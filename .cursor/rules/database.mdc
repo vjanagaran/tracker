@@ -27,7 +27,8 @@ with RLS on and no policy is invisible; a table with RLS off is a leak. Neither
 is acceptable.
 
 Board-scoped helpers: `is_superadmin`, `is_board_member`, `is_board_chairman`,
-`shares_board_with`. These are `SECURITY DEFINER` specifically so that policies
+`shares_board_with`. A board may have several chairmen; `is_board_chairman` is
+true for each of them, and there is no separate vice-chairman role. These are `SECURITY DEFINER` specifically so that policies
 on `board_members` can query `board_members` without recursing. Keep that
 property if you touch them.
 
@@ -42,8 +43,9 @@ property if you touch them.
 ## The secret key
 
 `SUPABASE_SECRET_KEY` is server-only. Current uses: `inviteUserByEmail` in the
-invite and resend-invite actions; `auth.admin.getUserById` in the admin roster
-loader; fixture setup in `scripts/rls-suite.ts`. It must never be imported into
+invite, resend-invite and invite-a-friend actions; `auth.admin.getUserById` in
+the admin roster loader; the morning-note run, which reads each opted-in
+member's own rows; fixture setup in `scripts/rls-suite.ts`. It must never be imported into
 a client component or a shared module a client can reach. If you need an admin
 client, construct it inside the action or a server-only loader. Do not add
 another use without asking.

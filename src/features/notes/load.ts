@@ -57,7 +57,7 @@ export async function loadNoteList(
 export async function loadCategories(client: Client, userId: string): Promise<NoteCategory[]> {
   const { data, error } = await client
     .from("note_categories")
-    .select("id, parent_id, name, sort_order")
+    .select("id, parent_id, name, description, sort_order")
     .eq("user_id", userId)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
@@ -70,6 +70,7 @@ export async function loadCategories(client: Client, userId: string): Promise<No
     id: row.id,
     parentId: row.parent_id,
     name: row.name,
+    description: row.description,
     sortOrder: row.sort_order,
   }));
 }

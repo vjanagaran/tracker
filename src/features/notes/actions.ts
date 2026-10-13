@@ -9,6 +9,7 @@ import { emptyBody, NOTE_LIST_COLUMNS, toNoteListItem } from "./load";
 import {
   addNoteCommentSchema,
   createNoteSchema,
+  moveNoteSchema,
   NOTE_BUCKET,
   noteIdSchema,
   noteObjectPath,
@@ -77,6 +78,36 @@ export async function saveNote(input: unknown): Promise<NoteActionResult> {
 
   refreshNotes(data.id);
   return { ok: true, note: toNoteListItem(data) };
+}
+
+/**
+ * Puts a note in another category, or in none. Only the category changes; the
+ * title and body are left exactly as they are. The database refuses a category
+ * the member does not own.
+ */
+export async function moveNote(input: unknown): Promise<NoteDeleteResult> {
+  const parsed = moveNoteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "That note could not be moved." };
+  }
+
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("notes")
+    .update({ category_id: parsed.data.categoryId })
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return { error: error.message };
+  }
+  if (!data) {
+    return { error: "That note no longer exists. Refresh the page to see the current list." };
+  }
+
+  refreshNotes(data.id);
+  return { ok: true };
 }
 
 export async function addNoteComment(input: unknown): Promise<NoteCommentResult> {

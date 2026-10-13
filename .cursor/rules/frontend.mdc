@@ -17,6 +17,9 @@ and as low in the tree as possible.
 with three overlaid polygons needs exact control, and a charting dependency
 costs more than it gives.
 
+The wheel PDF is drawn in the browser with `jspdf` and `html2canvas`, reusing
+the same radar component. It is the one place those two are used.
+
 **No global state library.** TanStack Query for server state, React state for
 the rest.
 
@@ -48,7 +51,8 @@ The signature element of the app. Requirements:
 Mobile-first, and mobile is a real use case: members update tasks on a phone
 between meetings. Test every screen at 375px.
 
-- Bottom tab bar on mobile — Tasks, Life, Business, Board. Sidebar on desktop.
+- Bottom tab bar on mobile — Dashboard, Tasks, Notes, Wheel, Board. Sidebar on
+  desktop; it collapses to an icon rail.
 - Touch targets 44px minimum.
 - Score entry is a stepper or a select, never a free-text number field. It is a
   0–10 value and the keyboard is the wrong tool.
@@ -71,7 +75,7 @@ video compression.
   breach — which is the one thing this product cannot afford.
 - Offline fallback states plainly what is unavailable and what still works.
 - `manifest.json`: name, short_name, 192 and 512 icons including maskable,
-  `display: standalone`.
+  `display: standalone`. The icon files live in `public/icons/`.
 
 ## Copy
 

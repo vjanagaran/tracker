@@ -1,6 +1,7 @@
 import type { NoteCategory, NoteCategoryNode, NoteListItem } from "./types";
 
 export const CATEGORY_MAX_LENGTH = 60;
+export const CATEGORY_DESCRIPTION_MAX_LENGTH = 500;
 
 /** The two built-in views that sit above the tree. */
 export const SCOPE_ALL = "all";

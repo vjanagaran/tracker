@@ -7,6 +7,11 @@ This document is the single source of truth for the product. Read it fully
 before writing code. `docs/BUILD_PLAN.md` has the phased task list and current
 build status.
 
+`docs/wireframe.html` drew the original screens: wheel, spoke, task list,
+board, meetings, cycles and admin. The Dashboard, the Tasks workspace, Notes,
+the wheel Table view and the wheel PDF were built after it. This document
+specifies them, and where the two disagree, this document wins.
+
 ---
 
 ## 1. The practice this software serves
@@ -43,7 +48,9 @@ board sees two numbers per member: finished since the last meeting, and open now
    between boards carries the full history.
 3. **Everything below `wheels`, plus notes, is private.** No member, chairman or
    superadmin can read another person's wheels, scores, plans, tasks or notes.
-   Sharing happens by screen share, in the moment, under the member's control.
+   Sharing happens by screen share, in the moment, or by a PDF the member
+   downloads from their own wheel and sends themselves. Either way it is the
+   member's act, never the app's.
 4. **Boards are independent tenants.** Any number of them, no data crossing.
 
 ---
@@ -55,6 +62,13 @@ board sees two numbers per member: finished since the last meeting, and open now
 | Superadmin | Create boards, manage rosters, invite members | Read any member's wheels, plans or tasks — including counts |
 | Chairman | Everything a director can, plus manage that board's meeting calendar | Read any other member's content |
 | Director | Own wheels, plans, tasks. Invite a friend to the platform (no board). See the board roster, calendar, and the counts dashboard | Read or edit anyone else's content |
+
+A board has **one or more chairmen**, and each has exactly the same access. This
+is how a vice-chairman is handled: they are a second chairman, not a separate
+role, so there is no third tier to define or defend. The roster marks every
+chairman with the same icon. The app refuses a roster change that would leave
+a board with no active chairman, and says so ("This board needs a chairman.
+Give the role to someone else first.").
 
 Nobody can edit another member's record. There is no administrative override.
 
@@ -70,7 +84,8 @@ profiles          one per auth user; the only shared personal data
                   timezone, morning_note_on, morning_note_sent_on are private
                   settings — never shown on /people
 boards            tenant. name, cadence_days, meeting_weekday
-board_members     roster. role, status, joined_on, left_on
+board_members     roster. role, status, joined_on, left_on. Any number of active
+                  chairmen per board (see section 2)
 meetings          calendar per board; agenda (planned topics) and notes
 
 wheels            (user_id, type WOL|WOB) — one of each per person
@@ -91,7 +106,8 @@ task_notes        append-only, specific to that task
 
 notes             personal documents; title, rich body, optional category_id.
                   No task/board/spoke link
-note_categories   per-person tree for notes: name, parent_id, sort_order
+note_categories   per-person tree for notes: name, optional description (up to
+                  500 characters), parent_id, sort_order
 note_comments     append-only, specific to that note (labelled Comments in the
                   UI so they are not confused with task notes)
 note_files        inline images and attached files for a note
@@ -162,7 +178,7 @@ the lockfile is authoritative. See `README.md` for setup.
 
 | Package | Installed | Role |
 |---|---|---|
-| `next` | 16.3.4 | App Router, server actions, Turbopack |
+| `next` | 16.3.4 | App Router, server actions. Dev runs on Turbopack; `npm run build` passes `--webpack` because the service-worker plugin builds with webpack |
 | `react` / `react-dom` | 19.2.8 | — |
 | `tailwindcss` | 4.x | CSS-first config, no `tailwind.config.js` |
 | `@supabase/supabase-js` | 2.116.x | — |
@@ -171,11 +187,15 @@ the lockfile is authoritative. See `README.md` for setup.
 | `react-hook-form` + `zod` | 7.x / 4.x | Forms and validation |
 | `@serwist/next` + `serwist` | 9.x | PWA service worker |
 | `date-fns` | 4.x | Dates |
-| `shadcn/ui` | 4.x | Components |
+| `shadcn/ui` + `@base-ui/react` + `lucide-react` + `sonner` | 4.x / 1.x / 1.x / 2.x | Components, icons, toasts |
+| `@tiptap/*` | 3.x | Rich text in Notes |
+| `resend` | 6.x | Morning note mail |
+| `jspdf` + `html2canvas` | 4.x / 1.x | Wheel PDF, built in the browser |
 
 **No chart library.** The wheel is eight points on a radar — hand-rolled SVG.
 A charting dependency costs more than it gives here, and the wheel needs exact
-control over the three overlaid polygons.
+control over the three overlaid polygons. The PDF reuses that same radar
+component; it does not bring a second renderer.
 
 **No global state library.** TanStack Query for server state, React state for
 the rest. Nothing in this app needs Zustand or Redux.
@@ -193,12 +213,13 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=              # server only. NEVER expose to the client
 RESEND_API_KEY=                   # morning note only
 MORNING_NOTE_FROM=                # e.g. Holistic Growth Tracker <notes@domain>
-CRON_SECRET=                      # Vercel cron Bearer token
+CRON_SECRET=                      # Bearer token the hourly caller must send
 ```
 
 `SUPABASE_SECRET_KEY` stays on the server. Current uses:
 
-- `inviteUserByEmail` in the invite and resend-invite actions
+- `inviteUserByEmail` in the invite and resend-invite actions, and in the
+  invite-a-friend action (same call, no board attached)
 - `auth.admin.getUserById` in the admin roster loader (email and whether
   the invite was accepted)
 - `scripts/rls-suite.ts` for test fixtures
@@ -206,7 +227,8 @@ CRON_SECRET=                      # Vercel cron Bearer token
   and meetings, then send them their own digest
 
 If it appears anywhere reachable from a client component, that is a bug. Do not
-add a fifth use without asking.
+add another use without asking. The PDF touches no secret and no server: it is
+drawn in the browser from rows the member already loaded.
 
 ---
 
@@ -214,6 +236,7 @@ add a fifth use without asking.
 
 ```
 app/
+  page.tsx                      signed in → /dashboard; otherwise the sign-in redirect
   (auth)/
     sign-in/page.tsx
     invite/accept/page.tsx
@@ -225,7 +248,8 @@ app/
     profile/page.tsx            edit own profile; morning-note opt-in; invite a friend
     people/[userId]/page.tsx    co-member profile, read-only
     wheel/
-      [type]/page.tsx           type = life | business — wheel + score table
+      [type]/page.tsx           type = life | business — Chart (radar + score grid),
+                                Table (the whole sheet), Download PDF
       [type]/cycles/page.tsx    cycle list, new cycle, compare two
     spoke/[spokeId]/page.tsx    focus areas + action plans + challenges
     tasks/page.tsx              the to-do list
@@ -241,23 +265,23 @@ app/
   auth/callback/route.ts        PKCE code exchange
   offline/page.tsx              PWA fallback
   radar/page.tsx                hardcoded radar preview; no auth
-  api/morning-note/route.ts     hourly cron; Bearer CRON_SECRET; no session
+  api/morning-note/route.ts     hourly tick; Bearer CRON_SECRET; no session
 ```
 
 There is otherwise no `app/api/` tree. Server components read data by default.
 Mutations go through server actions. TanStack Query is for client-side
 interactive views — chiefly the task list and the score grid, where optimistic
 updates matter. `/radar` is a development preview with wireframe scores, not a
-member screen. The morning-note route is the one exception: Vercel cron cannot
+member screen. The morning-note route is the one exception: a scheduler cannot
 call a server action.
 
 ---
 
 ## 6. Screens
 
-The wireframe at `docs/wireframe.html` shows all of these. Open it before
-building any screen; it is the agreed design, and the copy in it is the agreed
-copy.
+The wireframe at `docs/wireframe.html` shows the original screens. Open it
+before building any screen it covers; it is the agreed design, and the copy in
+it is the agreed copy. Screens it does not cover are specified below.
 
 ### Dashboard (`/dashboard`)
 Where a signed-in member lands. A launcher and a state of play, never a
@@ -283,12 +307,39 @@ buckets are computed twice — once on the server for the first paint, once in t
 browser through `todayStore` — so a member in any zone sees their own day.
 
 ### Wheel (`/wheel/life`, `/wheel/business`)
-Radar SVG on the left, score grid on the right. Three polygons: today (filled,
-solid), one year (solid line), five years (dashed). Below: the cycle this
-belongs to, with a picker, plus **New cycle** and **Compare**.
+The header carries the Life / Business switch, a cycle picker, a month input
+with **New cycle**, **Compare**, **Download PDF**, and on the business wheel a
+settings button that opens spoke management. Two tabs sit under it, Chart (the
+default) and Table.
 
-On mobile the radar sits above the grid, full width, and the grid becomes a
-stack of rows rather than a table.
+**Chart.** Radar SVG on the left, score grid on the right. Three polygons: today
+(filled, solid), one year (solid line), five years (dashed). **Save this
+rating** sits under the grid. On mobile the radar sits above the grid, full
+width, and the grid becomes a stack of rows rather than a table.
+
+**Table.** The whole sheet in one place, one row per action plan: number, area
+(a link to its spoke), Now, 1 year, 5 years, current state, 1-year goal, 5-year
+goal, action plan, challenge, and **Tasks**. A spoke with no focus area still
+shows its scores; a focus area with no plan shows its goals. On mobile it
+becomes a stack per spoke. It is read-only: ratings are edited in Chart, plans
+on the spoke page.
+
+The Tasks column reads `done/total`, for example `3/5`: tasks working toward
+that plan that are Completed, over those that are not Cancelled. `—` when none.
+It is two plain counts. It is never shown as a percentage, never summed to a
+spoke or a wheel, and never compared across people. See section 10.
+
+**Download PDF.** One landscape A4 file of the cycle on screen, built in the
+browser from the rows the member already loaded, including any rating typed
+but not yet saved. Nothing is sent to a server
+and nothing is stored. The table comes first, sliced across pages if it is long,
+then the radar with its three-column score list on a page of its own. Every page
+has a title (`<Name>'s Wheel of Life`), a subtitle (`Sep 2026 | Dt: 22 Sep 2026`)
+and a footer with the product name and `page / total`. The file is named
+`wheel-of-life-2026-09.pdf`, or `-draft` with no cycle. The button is disabled
+for an empty business wheel. This is the supported way to share a wheel outside
+a screen share: the member decides what to send, and when. Tasks and notes have
+no PDF.
 
 Business wheel with no spokes shows an empty state that invites naming the
 functions the member runs — not an error, an invitation.
@@ -402,6 +453,11 @@ Deleting an open repeating task ends the repeat, since occurrences are created
 when one is completed; the dialog says so and points to completing it instead.
 Cancelled is the way to keep an item on record.
 
+Delete exists because duplicates happen in real use: the same task ends up
+entered twice. A duplicate is noise, not a record, so the member can remove it
+outright. It is not how a task that stopped mattering is closed; that is
+Cancelled.
+
 This screen is shared on a call, so it must be legible at a distance: generous
 row height, no truncation of task titles, no horizontal scroll on a laptop.
 
@@ -413,8 +469,13 @@ here.** Task notes stay on the task.
 Three panels. The middle one is the category tree: **All notes** and **No
 category** first, then the person's own categories, siblings in the order they
 set (move up, move down), each with expand and collapse and a count that
-includes its subcategories. A category menu adds a subcategory, edits (rename
-or move inside another category), reorders and deletes. Choosing a category
+includes its subcategories. A category menu adds a subcategory, edits (rename,
+describe or move inside another category), reorders and deletes. A category may
+carry a short optional description: it shows under the category's name above its
+notes, and as a hover hint on its row in the tree. Drag a note from the list onto
+a category, or onto No category, to move it; a toast confirms and offers Undo.
+Only the category changes. Dragging needs a mouse: the category picker on the
+note itself does the same by keyboard and on a phone. Choosing a category
 lists its notes, with those of its subcategories, in the right panel; choosing
 a note opens it there. A note has at most one category, picked from the
 categories already made; it is optional.
@@ -429,8 +490,13 @@ Wheel is Life and Business with an in-page switch.
 
 ### Board (`/boards/[boardId]`)
 The counts table from `board_velocity`, plus the meeting calendar. Window
-defaults to the last meeting → the next one, via `meeting_window`. The chairman
-adds and moves meetings and edits the agenda.
+defaults to the last meeting → the next one, via `meeting_window`. Any chairman
+of the board adds and moves meetings and edits the agenda; directors read them.
+
+Each row names the member with photo, a link to their profile, a chairman mark
+where it applies, and their email and phone as links. All of that is profile
+data, which co-members already share; none of it comes from `board_velocity`.
+The two numbers are headed **Finished this fortnight** and **Open now**.
 
 ### Profile (`/profile`, `/people/[userId]`)
 Edit your own: name, photo, role, company, city, about, links, phone.
@@ -448,8 +514,12 @@ Body: Toward {spokes}, Today (max 4, labeled by tag / spoke / repeat), Later
 for overdue, meeting only if it is today, one button to the dashboard. No
 scores, no “needs a plan”, no “you haven’t rated.”
 
-Hourly Vercel cron at `/api/morning-note`. `morning_note_sent_on` is the
-member's local date so a double tick in the same hour does not mail twice.
+`/api/morning-note` expects a tick every hour, with the `CRON_SECRET` Bearer
+token. **Nothing calls it yet.** `vercel.json` has no cron, because Vercel Hobby
+allows only a daily one and a 07:00 send in every member's zone needs hourly
+(Pro, or an outside scheduler). Until one is set up, no morning note goes out.
+`morning_note_sent_on` is the member's local date so a double tick in the same
+hour does not mail twice.
 
 ### Cycles (`/wheel/[type]/cycles`)
 List of cycles, latest first. Select any two to overlay. Open a past cycle to
@@ -464,7 +534,8 @@ phone between meetings and share a laptop screen during them.
 
 - `public/manifest.json` — name **Holistic Growth Tracker**, short_name **HGT**, icons at
   192/512 (maskable included), `display: standalone`, theme colour matching the
-  shell. The icon PNG files themselves are still outstanding.
+  shell. The icon files are in `public/icons/`, with `apple-touch-icon.png`
+  alongside.
 - `src/sw.ts` with `@serwist/next`, disabled in development.
 - **Cache the app shell and static assets only.** Never cache authenticated
   Supabase responses or any route under `(app)`. A stale wheel or a stale task
@@ -474,6 +545,11 @@ phone between meetings and share a laptop screen during them.
   works.
 - Touch targets 44px minimum. Bottom tab bar on mobile: Dashboard · Tasks · Notes ·
   Wheel · Board. Sidebar on desktop: Dashboard, Tasks, Notes, Life, Business, Board.
+- The desktop sidebar is pinned to the viewport. Its top is the member's photo
+  and name, which link to Profile. Under Board it lists the member's boards,
+  and a superadmin also sees **Boards admin** below a separator. It collapses to
+  an icon rail with the button or the `M` key (ignored while typing); the choice
+  is remembered in the browser.
 - Score entry uses a stepper, never a free-text number field — it is a 0–10
   value and the keyboard is the wrong tool.
 
@@ -504,7 +580,9 @@ phone between meetings and share a laptop screen during them.
 
 Do not add these without asking. Each was considered and rejected.
 
-- Cross-member visibility of anything beyond profile, calendar and counts.
+- Cross-member visibility of anything beyond profile, calendar and counts. That
+  includes share links and any in-app way to open another member's content. To
+  share a wheel, a member sends the PDF; to share the rest, they share a screen.
 - Any derived or averaged score.
 - Notifications, reminders or nudges about neglected spokes. The opt-in
   morning note is the one exception, and it still must not mention an
@@ -518,9 +596,14 @@ Do not add these without asking. Each was considered and rejected.
 ## 10. Open items
 
 - Confirm the exact WOB spoke list per founding member during onboarding.
-- Icon artwork for the manifest (name is Holistic Growth Tracker / HGT). Files belong at
-  `public/icons/` as named in `public/manifest.json`.
 - Whether `/radar` stays a public preview once members are on the app.
+- Who calls `/api/morning-note` every hour (Vercel Pro cron or an outside
+  scheduler). Until then the morning note is built but never sent.
+- The `done/total` tally per action plan in the wheel Table and PDF. It is two
+  counts, not a percentage, but it sits close to the completion metric rejected
+  in section 9. Keep it, or show only the open count the way the Tasks screen does.
+- Whether a PDF of Tasks or Notes is ever wanted. Today only the wheel has one.
 
-Chairman calendar write access is decided: the chairman keeps it. The RLS
-policy is still commented so it can be removed in one line if that changes.
+Chairman calendar write access is decided: every chairman of a board keeps it,
+and a vice-chairman is simply a second chairman. The RLS policy is still
+commented so it can be removed in one line if that changes.

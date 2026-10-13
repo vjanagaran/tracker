@@ -7,6 +7,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { categoryPath, notesInScope, parseScope, scopeParam } from "./categories";
+import { startNoteDrag } from "./note-drag";
 import { displayTitle, formatUpdated } from "./labels";
 import type { NoteCategory, NoteListItem } from "./types";
 import { useNewNote } from "./use-new-note";
@@ -21,6 +22,7 @@ export function NoteListPanel({
   scopeValue: string | null;
 }) {
   const [query, setQuery] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
   const scope = parseScope(scopeValue, categories);
   const param = scopeParam(scope);
   const { creating, error, create } = useNewNote(scope);
@@ -37,6 +39,10 @@ export function NoteListPanel({
       : scope.kind === "none"
         ? "No category"
         : (categoryPath(categories, scope.id).at(-1) ?? "Category");
+  const description =
+    scope.kind === "category"
+      ? (categories.find((category) => category.id === scope.id)?.description ?? null)
+      : null;
   const trail = scope.kind === "category" ? categoryPath(categories, scope.id).slice(0, -1) : [];
 
   return (
@@ -57,7 +63,12 @@ export function NoteListPanel({
           <h2 className="text-[1.5rem] font-semibold tracking-tight break-words md:text-[1.75rem]">
             {heading}
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          {description ? (
+            <p className="mt-1.5 max-w-prose text-sm break-words whitespace-pre-wrap text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+          <p className="mt-1.5 text-xs text-muted-foreground">
             {inScope.length === 1 ? "1 note" : `${inScope.length} notes`}
           </p>
         </div>
@@ -117,8 +128,19 @@ export function NoteListPanel({
                   <li key={note.id}>
                     <Link
                       href={`/notes/${note.id}?category=${encodeURIComponent(param)}`}
+                      draggable
+                      onDragStart={(event) => {
+                        startNoteDrag(event, {
+                          id: note.id,
+                          title: displayTitle(note.title),
+                          categoryId: note.categoryId,
+                        });
+                        setDragging(note.id);
+                      }}
+                      onDragEnd={() => setDragging(null)}
                       className={cn(
-                        "block min-h-14 border-b border-border px-1 py-3 hover:bg-foreground/[0.03]",
+                        "block min-h-14 cursor-grab border-b border-border px-1 py-3 hover:bg-foreground/[0.03] active:cursor-grabbing",
+                        dragging === note.id ? "opacity-50" : null,
                       )}
                     >
                       <p className="text-sm font-medium break-words">{displayTitle(note.title)}</p>

@@ -19,7 +19,7 @@ export function MeetingSummary({
     return (
       <section className="pb-card p-4 md:p-5">
         <p className="text-sm text-muted-foreground">
-          No meeting on the calendar yet. The chairman schedules the next one.
+          No meeting on the calendar yet. A chairman schedules the next one.
         </p>
       </section>
     );

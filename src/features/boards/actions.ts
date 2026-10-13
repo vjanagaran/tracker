@@ -24,7 +24,7 @@ async function assertChairman(
     return { error: error.message };
   }
   if (data?.role !== "chairman") {
-    return { error: "Only the chairman can change the meeting calendar." };
+    return { error: "Only a chairman can change the meeting calendar." };
   }
   return { ok: true };
 }
