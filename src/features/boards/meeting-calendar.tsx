@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { AddMeetingForm } from "./add-meeting-form";
 import { EditAgendaForm } from "./edit-agenda-form";
@@ -17,7 +16,6 @@ type MeetingCalendarProps = {
   boardId: string;
   meetings: BoardMeeting[];
   nextMeetingId: string | null;
-  selectedMeetingId: string | null;
   canSchedule: boolean;
 };
 
@@ -25,7 +23,6 @@ export function MeetingCalendar({
   boardId,
   meetings,
   nextMeetingId,
-  selectedMeetingId,
   canSchedule,
 }: MeetingCalendarProps) {
   const next =
@@ -33,7 +30,6 @@ export function MeetingCalendar({
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-normal tracking-tight">Meetings</h2>
       {meetings.length === 0 ? (
         <p className="mb-4 max-w-prose text-sm text-muted-foreground">
           No meetings yet. Add one to set the counting window.
@@ -54,23 +50,13 @@ export function MeetingCalendar({
               <tbody>
                 {meetings.map((meeting) => {
                   const tone = meetingTone(meeting, next);
-                  const selected = meeting.id === selectedMeetingId;
                   return (
                     <tr
                       key={meeting.id}
                       className="border-b border-border last:border-b-0"
                     >
                       <td className="px-3 py-4 text-sm">
-                        <Link
-                          href={`/boards/${boardId}?meeting=${meeting.id}`}
-                          className={
-                            selected
-                              ? "font-medium text-foreground"
-                              : "text-primary"
-                          }
-                        >
-                          {formatMeetingWhen(meeting.scheduledAt)}
-                        </Link>
+                        {formatMeetingWhen(meeting.scheduledAt)}
                       </td>
                       <td className="px-3 py-4">
                         <StatusChip tone={tone} />
@@ -107,15 +93,9 @@ export function MeetingCalendar({
           <ul className="mb-4 divide-y divide-border md:hidden">
             {meetings.map((meeting) => {
               const tone = meetingTone(meeting, next);
-              const selected = meeting.id === selectedMeetingId;
               return (
                 <li key={meeting.id} className="flex flex-col gap-2 px-4 py-4">
-                  <Link
-                    href={`/boards/${boardId}?meeting=${meeting.id}`}
-                    className={`min-h-11 text-sm ${selected ? "font-medium" : "text-primary"}`}
-                  >
-                    {formatMeetingWhen(meeting.scheduledAt)}
-                  </Link>
+                  <p className="text-sm font-medium">{formatMeetingWhen(meeting.scheduledAt)}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusChip tone={tone} />
                   </div>

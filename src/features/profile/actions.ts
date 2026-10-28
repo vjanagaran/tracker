@@ -7,7 +7,6 @@ import {
   avatarObjectPath,
   emptyToNull,
   normalizeHttpUrl,
-  parseFoundedYear,
   profileSchema,
 } from "./schema";
 
@@ -40,13 +39,8 @@ export async function updateProfile(
       full_name: parsed.data.fullName,
       phone: emptyToNull(parsed.data.phone),
       designation: emptyToNull(parsed.data.designation),
-      company: emptyToNull(parsed.data.company),
-      company_founded_year: parseFoundedYear(parsed.data.companyFoundedYear),
-      industry: emptyToNull(parsed.data.industry),
       city: emptyToNull(parsed.data.city),
       about: emptyToNull(parsed.data.about),
-      about_company: emptyToNull(parsed.data.aboutCompany),
-      website: normalizeHttpUrl(parsed.data.website),
       linkedin: normalizeHttpUrl(parsed.data.linkedin),
       morning_note_on: parsed.data.morningNoteOn,
       timezone: parsed.data.morningNoteOn ? parsed.data.timezone : emptyToNull(parsed.data.timezone),

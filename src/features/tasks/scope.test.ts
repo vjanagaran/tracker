@@ -65,6 +65,7 @@ function task(partial: Partial<TaskItem> & Pick<TaskItem, "id">): TaskItem {
     tag: null,
     status: "Not Started",
     priority: "flexi",
+    progress: 0,
     plannedStartOn: null,
     plannedStartTime: null,
     targetOn: null,
@@ -74,6 +75,7 @@ function task(partial: Partial<TaskItem> & Pick<TaskItem, "id">): TaskItem {
     repeatUntil: null,
     seriesId: partial.id,
     planIds: [],
+    boardIds: [],
     notes: [],
     ...partial,
   };

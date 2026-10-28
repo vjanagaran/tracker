@@ -5,7 +5,7 @@ import type { PublicProfile } from "./types";
 type Client = SupabaseClient<Database>;
 
 const PROFILE_COLUMNS =
-  "id, full_name, email, phone, photo_url, designation, company, company_founded_year, industry, city, about, about_company, website, linkedin";
+  "id, full_name, email, phone, photo_url, designation, city, about, linkedin";
 
 function toPublicProfile(
   row: {
@@ -15,13 +15,8 @@ function toPublicProfile(
     phone: string | null;
     photo_url: string | null;
     designation: string | null;
-    company: string | null;
-    company_founded_year: number | null;
-    industry: string | null;
     city: string | null;
     about: string | null;
-    about_company: string | null;
-    website: string | null;
     linkedin: string | null;
   },
 ): PublicProfile {
@@ -32,13 +27,8 @@ function toPublicProfile(
     phone: row.phone,
     photoUrl: row.photo_url,
     designation: row.designation,
-    company: row.company,
-    companyFoundedYear: row.company_founded_year,
-    industry: row.industry,
     city: row.city,
     about: row.about,
-    aboutCompany: row.about_company,
-    website: row.website,
     linkedin: row.linkedin,
   };
 }

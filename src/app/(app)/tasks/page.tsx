@@ -20,6 +20,7 @@ export default async function TasksPage() {
       initialTasks={view.tasks}
       plans={view.plans}
       tree={view.tree}
+      boards={view.boards}
       serverToday={serverToday}
       timeZone={timeZone}
     />

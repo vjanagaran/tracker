@@ -15,20 +15,28 @@ and Wheel of Business practice on a fortnightly review cycle. Full detail in
    The business wheel never computes the Business spoke on the life wheel. If a
    feature would compute a score from other scores, stop and ask.
 
-2. **Wheels, plans, tasks and notes belong to the person, not the board.** Never add a
+2. **Wheels, plans, tasks, notes and companies belong to the person, not the board.** Never add a
    `board_id` to `wheels`, `spokes`, `wheel_cycles`, `spoke_scores`,
    `focus_areas`, `action_plans`, `tasks`, `notes`, `note_files`, `note_categories`
-   or `note_comments`. Members carry
+   `note_comments` or `companies`. Members carry
    their history between boards, and that only works because the board does not own it.
 
 3. **Everything below `wheels`, plus `notes`, is private to its owner.** No member,
    chairman or superadmin may read another person's wheels, scores, plans, tasks or
    notes. The only shared surface is: profiles of co-members, the board roster, the
-   meeting calendar, and the counts from `board_velocity`.
+   meeting calendar, the counts from `board_velocity`, and tasks the owner has
+   ticked as shared with a board (through `board_shared_goals`, see 4).
 
-4. **`board_velocity` is the only cross-member read**, and it returns counts and
-   names only. Never extend it to return titles, tags, dates or links. Never add
-   a second `SECURITY DEFINER` function that reads member content without asking.
+4. **`board_velocity` and `board_shared_goals` are the only cross-member reads.**
+   `board_velocity` returns counts and names only; never extend it to return
+   titles, tags, dates or links. `board_shared_goals` returns task id, title,
+   description, spoke names, start date, target date, status and progress (only for Work in Progress,
+   Hold Now and Postponed) for tasks the
+   owner shared with that board, and nothing else. Never extend it to notes,
+   priority, tag, times or links, and never return an unshared task. Sharing is
+   per task and per board, off by default, and only the owner can change it; it
+   lives in `task_board_shares`, never as a `board_id` on `tasks`. Never add a
+   third `SECURITY DEFINER` function that reads member content without asking.
 
 5. **Never write `tasks.completed_on` from application code.** A database
    trigger owns it.
@@ -38,9 +46,11 @@ and Wheel of Business practice on a fortnightly review cycle. Full detail in
 
 ## Deliberately absent — do not add without asking
 
-Cross-member visibility beyond counts · derived or averaged scores ·
-notifications or nudges · definitions of what a score means · assigning tasks to
-other people · completion-percentage metrics.
+Cross-member visibility beyond counts and explicitly shared tasks · sharing by
+default · derived or averaged scores · notifications or nudges · definitions of what a score means · assigning tasks to
+other people · completion-percentage metrics. (A progress number a member sets on one of
+their own tasks is not that metric, and it must never be averaged, summed or
+rolled up.)
 
 Each of these was considered and rejected. The outcome this product is after is
 a rounder wheel over time, not a productivity score.

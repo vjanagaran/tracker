@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { User } from "lucide-react";
 import { ChairmanIcon } from "./chairman-icon";
-import type { VelocityRow } from "./types";
+import type { RosterMember } from "./types";
 
 function MemberAvatar({ photoUrl }: { photoUrl: string | null }) {
   return (
@@ -19,7 +19,7 @@ function MemberAvatar({ photoUrl }: { photoUrl: string | null }) {
   );
 }
 
-function MemberIdentity({ row }: { row: VelocityRow }) {
+function MemberIdentity({ row }: { row: RosterMember }) {
   const name = row.fullName || "Unnamed";
   return (
     <span className="flex items-center gap-3">
@@ -39,6 +39,19 @@ function MemberIdentity({ row }: { row: VelocityRow }) {
             </span>
           ) : null}
         </span>
+        {row.companies.length > 0 ? (
+          <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+            {row.companies.map((company) => (
+              <Link
+                key={company.id}
+                href={`/companies/${company.id}`}
+                className="inline-flex min-h-11 items-center hover:text-foreground md:min-h-0"
+              >
+                {company.name}
+              </Link>
+            ))}
+          </span>
+        ) : null}
         <MemberContact email={row.email} phone={row.phone} />
       </span>
     </span>
@@ -78,24 +91,22 @@ function MemberContact({
   );
 }
 
-export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
+export function MembersTable({ rows }: { rows: RosterMember[] }) {
   if (rows.length === 0) {
     return (
       <p className="max-w-prose text-sm text-muted-foreground">
-        Counts start once a meeting is on the calendar.
+        No members yet. A superadmin adds members from the board admin screen.
       </p>
     );
   }
 
   return (
-    <section className="mb-10">
+    <section>
       <div className="hidden md:block">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground">
               <th className="px-3 py-3">Member</th>
-              <th className="w-[180px] px-3 py-3">Finished this fortnight</th>
-              <th className="w-[110px] px-3 py-3">Open now</th>
             </tr>
           </thead>
           <tbody>
@@ -104,8 +115,6 @@ export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
                 <td className="px-3 py-3">
                   <MemberIdentity row={row} />
                 </td>
-                <td className="px-3 py-4 text-base font-medium">{row.completedCount}</td>
-                <td className="px-3 py-4 text-sm">{row.openCount}</td>
               </tr>
             ))}
           </tbody>
@@ -116,16 +125,9 @@ export function VelocityTable({ rows }: { rows: VelocityRow[] }) {
         {rows.map((row) => (
           <li key={row.userId} className="px-4 py-4">
             <MemberIdentity row={row} />
-            <p className="mt-2 text-sm text-muted-foreground">
-              Finished this fortnight {row.completedCount} · Open now {row.openCount}
-            </p>
           </li>
         ))}
       </ul>
-
-      <p className="mt-3 text-xs text-muted-foreground">
-        Counts only. Task titles stay private to each member.
-      </p>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { loadCompaniesOf } from "@/features/companies/load";
 import { ProfileView } from "@/features/profile/profile-view";
 import { canViewProfile, loadPublicProfile } from "@/features/profile/load";
 import { requireUser } from "@/lib/auth/require-user";
@@ -20,5 +21,8 @@ export default async function PersonPage({ params }: PersonPageProps) {
     notFound();
   }
 
-  return <ProfileView profile={profile} isOwn={user.id === userId} />;
+  // Row-level security keeps back any company its owner has not shared.
+  const companies = await loadCompaniesOf(supabase, userId);
+
+  return <ProfileView profile={profile} isOwn={user.id === userId} companies={companies} />;
 }

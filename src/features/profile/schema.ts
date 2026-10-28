@@ -9,18 +9,6 @@ export function emptyToNull(value: string | undefined) {
   return blankToUndefined(value) ?? null;
 }
 
-export function parseFoundedYear(value: string | undefined): number | null {
-  const trimmed = blankToUndefined(value);
-  if (!trimmed) {
-    return null;
-  }
-  const year = Number(trimmed);
-  if (!Number.isInteger(year) || year < 1800 || year > 2100) {
-    return null;
-  }
-  return year;
-}
-
 export function normalizeHttpUrl(value: string | undefined): string | null {
   const trimmed = blankToUndefined(value);
   if (!trimmed) {
@@ -57,37 +45,11 @@ export const profileSchema = z
     morningNoteOn: z.boolean(),
     timezone: z.string(),
     designation: z.string().max(120).optional(),
-    company: z.string().max(160).optional(),
-    companyFoundedYear: z.string().max(4).optional(),
-    industry: z.string().max(120).optional(),
     city: z.string().max(80).optional(),
     about: z.string().max(2000).optional(),
-    aboutCompany: z.string().max(2000).optional(),
-    website: z.string().max(300).optional(),
     linkedin: z.string().max(300).optional(),
   })
   .superRefine((value, ctx) => {
-    const year = blankToUndefined(value.companyFoundedYear);
-    if (year) {
-      const parsed = Number(year);
-      if (!Number.isInteger(parsed) || parsed < 1800 || parsed > 2100) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["companyFoundedYear"],
-          message: "Enter a year.",
-        });
-      }
-    }
-
-    const website = normalizeHttpUrl(value.website);
-    if (blankToUndefined(value.website) && (!website || !isHttpUrl(website))) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["website"],
-        message: "Enter a web address.",
-      });
-    }
-
     const linkedin = normalizeHttpUrl(value.linkedin);
     if (blankToUndefined(value.linkedin) && (!linkedin || !isHttpUrl(linkedin))) {
       ctx.addIssue({

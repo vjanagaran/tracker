@@ -12,6 +12,13 @@ const taskFields = {
   title: z.string().trim().min(1, "Name what you are doing."),
   description: z.string().trim().max(4000, "Keep the description under 4,000 characters.").nullable().optional(),
   priority: z.enum(["high", "medium", "low", "flexi"]).optional(),
+  progress: z
+    .number()
+    .int()
+    .min(0, "Progress runs from 0 to 100.")
+    .max(100, "Progress runs from 0 to 100.")
+    .multipleOf(5, "Progress moves in steps of 5.")
+    .optional(),
   tag: z.enum(["WOL", "WOB", "OPEN"]).nullable().optional(),
   status: z.enum([
     "Not Started",
@@ -28,6 +35,7 @@ const taskFields = {
   repeatEvery: z.enum(["daily", "weekly", "fortnightly", "monthly"]).nullable().optional(),
   repeatUntil: dateOnly,
   planIds: z.array(z.string().uuid()).optional(),
+  boardIds: z.array(z.string().uuid()).optional(),
 };
 
 function withRepeatRule<T extends z.ZodType>(schema: T) {

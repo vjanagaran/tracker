@@ -18,6 +18,7 @@ import { createTask, updateTask } from "./actions";
 import { addDays, nextMonday, thisWeekend, weekdayShort } from "./dates";
 import { PlanPicker } from "./plan-picker";
 import { PRIORITY } from "./priority";
+import { PROGRESS_STEP, canSetProgress, effectiveProgress } from "./progress";
 import { repeatLabel, tagLabel } from "./labels";
 import {
   TASK_PRIORITIES,
@@ -25,6 +26,7 @@ import {
   TASK_STATUSES,
   TASK_TAGS,
   type PlanOption,
+  type ShareBoardOption,
   type TaskItem,
   type TaskPriority,
   type TaskRepeat,
@@ -36,6 +38,8 @@ import {
 type TaskFormProps = {
   plans: PlanOption[];
   tree: TaskTreeWheel[];
+  /** Boards the member belongs to; each can be ticked to show this task. */
+  boards: ShareBoardOption[];
   /** The member's calendar day, for the quick finish-by choices. */
   today: string;
   task?: TaskItem;
@@ -44,6 +48,13 @@ type TaskFormProps = {
 };
 
 const NO_REPEAT = "none";
+
+function progressHint(status: TaskStatus) {
+  if (status === "Not Started") return "Starts at 0%.";
+  if (status === "Completed") return "Completed is 100%.";
+  if (status === "Cancelled") return "Not used once cancelled.";
+  return "Set how far along it is.";
+}
 
 const repeatItems = [
   { value: NO_REPEAT, label: "Does not repeat" },
@@ -72,12 +83,14 @@ const chipBase =
 const quickBase =
   "inline-flex min-h-9 items-center rounded-full border px-3 text-[13px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/40 pointer-coarse:min-h-11";
 
-export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFormProps) {
+export function TaskForm({ plans, tree, boards, today, task, onSaved, onCancel }: TaskFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [tag, setTag] = useState<TaskTag | null>(task?.tag ?? null);
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "Not Started");
+  const [progress, setProgress] = useState(task?.progress ?? 0);
   const [planIds, setPlanIds] = useState<string[]>(task?.planIds ?? []);
+  const [boardIds, setBoardIds] = useState<string[]>(task?.boardIds ?? []);
   const [repeatEvery, setRepeatEvery] = useState<TaskRepeat | null>(task?.repeatEvery ?? null);
   const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "flexi");
   const [plannedStartOn, setPlannedStartOn] = useState(task?.plannedStartOn ?? "");
@@ -95,6 +108,9 @@ export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFo
     if (!value) setTargetTime("");
   }
 
+  const progressEditable = canSetProgress(status);
+  const shownProgress = effectiveProgress(status, progress);
+
   const quickDates = [
     { label: "Today", value: today },
     { label: "Tomorrow", value: addDays(today, 1) },
@@ -111,6 +127,7 @@ export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFo
       tag,
       status,
       priority,
+      progress,
       plannedStartOn,
       plannedStartTime,
       targetOn,
@@ -118,6 +135,7 @@ export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFo
       repeatEvery,
       repeatUntil: String(formData.get("repeatUntil") ?? ""),
       planIds,
+      boardIds,
     };
     const result = task
       ? await updateTask({ id: task.id, ...payload })
@@ -159,22 +177,50 @@ export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFo
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="status" className="text-xs text-muted-foreground">
-          Status
-        </Label>
-        <Select value={status} onValueChange={(value) => setStatus(value ?? "Not Started")}>
-          <SelectTrigger id="status" className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TASK_STATUSES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 items-start gap-3">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="status" className="text-xs text-muted-foreground">
+            Status
+          </Label>
+          <Select value={status} onValueChange={(value) => setStatus(value ?? "Not Started")}>
+            <SelectTrigger id="status" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TASK_STATUSES.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <Label htmlFor="progress" className="text-xs text-muted-foreground">
+              Progress
+            </Label>
+            <output htmlFor="progress" className="text-sm font-medium tabular-nums">
+              {shownProgress}%
+            </output>
+          </div>
+          <input
+            id="progress"
+            type="range"
+            min={0}
+            max={100}
+            step={PROGRESS_STEP}
+            value={shownProgress}
+            disabled={!progressEditable}
+            aria-describedby="progress-hint"
+            onChange={(event) => setProgress(Number(event.target.value))}
+            className="h-11 w-full cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <p id="progress-hint" className="-mt-1.5 text-xs text-muted-foreground">
+            {progressHint(status)}
+          </p>
+        </div>
       </div>
 
       <fieldset className="flex flex-col gap-1.5">
@@ -370,6 +416,43 @@ export function TaskForm({ plans, tree, today, task, onSaved, onCancel }: TaskFo
         </p>
         <PlanPicker catalog={plans} tree={tree} value={planIds} onChange={setPlanIds} />
       </Section>
+
+      {boards.length > 0 ? (
+        <Section title="Sharing with board">
+          <p className="-mt-1.5 text-xs text-muted-foreground">
+            Optional. Members of a board you tick can see this task&apos;s title, description,
+            spoke, dates and status. Notes stay private.
+          </p>
+          <ul className="flex flex-col">
+            {boards.map((board) => {
+              const inputId = `share-${board.id}`;
+              return (
+                <li key={board.id}>
+                  <label
+                    htmlFor={inputId}
+                    className="flex min-h-11 cursor-pointer items-center gap-3 text-sm"
+                  >
+                    <input
+                      id={inputId}
+                      type="checkbox"
+                      checked={boardIds.includes(board.id)}
+                      onChange={(event) =>
+                        setBoardIds((current) =>
+                          event.target.checked
+                            ? [...current, board.id]
+                            : current.filter((id) => id !== board.id),
+                        )
+                      }
+                      className="size-4 shrink-0 accent-primary"
+                    />
+                    {board.name}
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+      ) : null}
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadMemberBoards } from "@/features/boards/load";
 import type { Database } from "@/lib/database.types";
 import type {
   PlanOption,
+  ShareBoardOption,
   TaskItem,
   TaskNote,
   TaskTreeFocus,
@@ -12,7 +14,7 @@ import type {
 type Client = SupabaseClient<Database>;
 
 export const TASK_COLUMNS =
-  "id, title, description, tag, status, priority, planned_start_on, planned_start_time, target_on, target_time, completed_on, repeat_every, repeat_until, series_id" as const;
+  "id, title, description, tag, status, priority, progress, planned_start_on, planned_start_time, target_on, target_time, completed_on, repeat_every, repeat_until, series_id" as const;
 
 type TaskRow = Pick<
   Database["public"]["Tables"]["tasks"]["Row"],
@@ -22,6 +24,7 @@ type TaskRow = Pick<
   | "tag"
   | "status"
   | "priority"
+  | "progress"
   | "planned_start_on"
   | "planned_start_time"
   | "target_on"
@@ -41,6 +44,7 @@ export function mapTaskRow(
   row: TaskRow,
   planIds: string[] = [],
   notes: TaskNote[] = [],
+  boardIds: string[] = [],
 ): TaskItem {
   return {
     id: row.id,
@@ -49,6 +53,7 @@ export function mapTaskRow(
     tag: row.tag,
     status: row.status,
     priority: row.priority,
+    progress: row.progress,
     plannedStartOn: row.planned_start_on,
     plannedStartTime: clockTime(row.planned_start_time),
     targetOn: row.target_on,
@@ -58,6 +63,7 @@ export function mapTaskRow(
     repeatUntil: row.repeat_until,
     seriesId: row.series_id,
     planIds,
+    boardIds,
     notes,
   };
 }
@@ -66,17 +72,25 @@ export type TaskWorkspaceData = {
   tasks: TaskItem[];
   plans: PlanOption[];
   tree: TaskTreeWheel[];
+  /** Boards the member can show a task to. */
+  boards: ShareBoardOption[];
 };
 
 export async function loadTaskWorkspace(
   supabase: Client,
   userId: string,
 ): Promise<TaskWorkspaceData> {
-  const [tasks, structure] = await Promise.all([
+  const [tasks, structure, boards] = await Promise.all([
     loadTasks(supabase, userId),
     loadWheelStructure(supabase, userId),
+    loadMemberBoards(supabase, userId),
   ]);
-  return { tasks, plans: structure.plans, tree: structure.tree };
+  return {
+    tasks,
+    plans: structure.plans,
+    tree: structure.tree,
+    boards: boards.map((board) => ({ id: board.id, name: board.name })),
+  };
 }
 
 async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> {
@@ -92,9 +106,14 @@ async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> 
   const taskIds = (rows ?? []).map((row) => row.id);
   const notesByTask = new Map<string, TaskNote[]>();
   const plansByTask = new Map<string, string[]>();
+  const boardsByTask = new Map<string, string[]>();
 
   if (taskIds.length > 0) {
-    const [{ data: notes, error: notesError }, { data: links, error: linksError }] =
+    const [
+      { data: notes, error: notesError },
+      { data: links, error: linksError },
+      { data: shares, error: sharesError },
+    ] =
       await Promise.all([
         supabase
           .from("task_notes")
@@ -105,6 +124,10 @@ async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> 
           .from("task_action_plans")
           .select("task_id, action_plan_id")
           .in("task_id", taskIds),
+        supabase
+          .from("task_board_shares")
+          .select("task_id, board_id")
+          .in("task_id", taskIds),
       ]);
 
     if (notesError) {
@@ -112,6 +135,9 @@ async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> 
     }
     if (linksError) {
       throw new Error(linksError.message);
+    }
+    if (sharesError) {
+      throw new Error(sharesError.message);
     }
 
     for (const note of notes ?? []) {
@@ -129,10 +155,21 @@ async function loadTasks(supabase: Client, userId: string): Promise<TaskItem[]> 
       list.push(link.action_plan_id);
       plansByTask.set(link.task_id, list);
     }
+
+    for (const share of shares ?? []) {
+      const list = boardsByTask.get(share.task_id) ?? [];
+      list.push(share.board_id);
+      boardsByTask.set(share.task_id, list);
+    }
   }
 
   return (rows ?? []).map((row) =>
-    mapTaskRow(row, plansByTask.get(row.id) ?? [], notesByTask.get(row.id) ?? []),
+    mapTaskRow(
+      row,
+      plansByTask.get(row.id) ?? [],
+      notesByTask.get(row.id) ?? [],
+      boardsByTask.get(row.id) ?? [],
+    ),
   );
 }
 

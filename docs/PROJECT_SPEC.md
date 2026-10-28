@@ -51,6 +51,12 @@ board sees two numbers per member: finished since the last meeting, and open now
    Sharing happens by screen share, in the moment, or by a PDF the member
    downloads from their own wheel and sends themselves. Either way it is the
    member's act, never the app's.
+   **One exception, decided 28 Oct 2026:** a member may tick a task as shared
+   with a board. It then appears on that board's Goals tab with its title,
+   description, spoke, start date, target date and status. Nothing is shared
+   until the member ticks it, task notes are never shared, and the member can
+   untick at any time. The task row itself stays owner-only; the board reads it
+   through `board_shared_goals`.
 4. **Boards are independent tenants.** Any number of them, no data crossing.
 
 ---
@@ -131,6 +137,12 @@ Note images and attachments live in a **private** `notes` bucket. Paths are
 - A time of day needs its date: `planned_start_time` only with
   `planned_start_on`, `target_time` only with `target_on`. The next occurrence
   of a repeating task keeps description, priority and both times.
+- Progress is a number the member sets on their own task, 0 to 100 in steps of
+  5. Not Started reads as 0 and Completed as 100; only Work in Progress, Hold
+  Now and Postponed let the member set it. It is never averaged, summed or shown
+  as a figure for a plan, spoke, board or person. The board's Goals tab shows it
+  only for those three statuses, and `board_shared_goals` returns it as null for
+  every other status.
 - Priority is a flag the member sets on their own task. It breaks ties in the
   order tasks come due and is never counted, averaged or compared across people.
 - A repeating task must have `target_on`. Completing it inserts the next
@@ -143,12 +155,26 @@ Note images and attachments live in a **private** `notes` bucket. Paths are
 - Row-level security keys wheels, plans, tasks, notes, note categories and note
   comments to `user_id = auth.uid()`, directly or through the note.
 
-### The one deliberate RLS bypass
+### The deliberate RLS bypasses
+
+There are two, and each returns a fixed set of columns.
 
 `board_velocity(board_id, from, to)` is `SECURITY DEFINER`. It checks the caller
 is an active member of the board, then returns **only** user id, name, completed
 count and open count. No titles, tags, dates or links ever leave it. Superadmin
 gets no exemption. Any change to this function needs careful review.
+
+`board_shared_goals(board_id)` is `SECURITY DEFINER`. It checks the caller is an
+active member of the board, then returns **only** tasks the owner has shared
+with that board through `task_board_shares`, and only while the owner is still
+an active member. Columns: user id, name, task id, title, description, spoke
+names (from the owner's linked action plans), start date, target date, status,
+progress (null unless the status is Work in Progress, Hold Now or Postponed).
+Never notes, priority, tag, times, repeat rules or plan links. Superadmin gets
+no exemption. `task_board_shares (task_id, board_id)` is owner-only under RLS,
+and a member can only share onto a board they belong to. A repeating task's next
+occurrence keeps the same sharing. Any change to this function needs careful
+review.
 
 ### Fixed WOL spokes
 
@@ -489,17 +515,38 @@ places Notes next to Tasks. Mobile tabs: Dashboard · Tasks · Notes · Wheel ·
 Wheel is Life and Business with an in-page switch.
 
 ### Board (`/boards/[boardId]`)
-The counts table from `board_velocity`, plus the meeting calendar. Window
-defaults to the last meeting → the next one, via `meeting_window`. Any chairman
-of the board adds and moves meetings and edits the agenda; directors read them.
+Three tabs: **Members**, **Meetings**, **Goals**, chosen with `?tab=`.
 
-Each row names the member with photo, a link to their profile, a chairman mark
-where it applies, and their email and phone as links. All of that is profile
-data, which co-members already share; none of it comes from `board_velocity`.
-The two numbers are headed **Finished this fortnight** and **Open now**.
+**Members** is the roster. Each row names the member with photo, a link to
+their profile, a chairman mark where it applies, and their email and phone as
+links. All of that is profile data, which co-members already share. The board
+no longer shows finished and open counts; `board_velocity` is still in the
+database and still feeds the member's own dashboard card.
 
-### Profile (`/profile`, `/people/[userId]`)
-Edit your own: name, photo, role, company, city, about, links, phone.
+**Meetings** is the calendar. Any chairman of the board adds and moves meetings
+and edits the agenda; directors read them.
+
+**Goals** has one sub-tab per active member, like the tabs of a spreadsheet,
+opening on your own. Each is a table: Task, Spoke, Description, Start date,
+Target date, Status, Progress. It lists only tasks that member ticked under **Sharing with
+board** on the task form, read through `board_shared_goals`. Below `md` the
+rows stack.
+
+### Profile (`/profile`, `/profile/companies`, `/people/[userId]`)
+Two tabs. **Personal** is you: name, photo, designation, city, about you,
+LinkedIn, phone, the morning note, and Invite a friend.
+**Companies** holds any number of company profiles per person. Each has a
+logo, name, tagline, industry, founded year, about, website, GST number,
+address (street, city, state, pincode), a contact (person, email, phone),
+purpose, vision, mission, core values, social links (LinkedIn, Instagram,
+Facebook, X, YouTube) and a PDF brochure. Companies belong to the person, never
+the board, so they travel between boards. A company is shown to members of the
+owner's boards unless the owner turns off **Show this company to members of my
+boards**. The read is plain row-level security, the same reach as `profiles`;
+there is no new function. Co-members open one at `/companies/[companyId]` and
+fetch the brochure through a short-lived signed link. The board's Members tab
+lists each member's visible companies. The old company columns on `profiles`
+were copied into a first company and are no longer used.
 Morning note opt-in and timezone live here too — they are not on the
 co-member view. Invite a friend lives here as well: email only, no board.
 Sign out lives on the edit page.
@@ -580,9 +627,11 @@ phone between meetings and share a laptop screen during them.
 
 Do not add these without asking. Each was considered and rejected.
 
-- Cross-member visibility of anything beyond profile, calendar and counts. That
-  includes share links and any in-app way to open another member's content. To
-  share a wheel, a member sends the PDF; to share the rest, they share a screen.
+- Cross-member visibility of anything beyond profile, calendar, counts and the
+  tasks a member has ticked as shared with a board (see section 1, rule 3).
+  That still excludes share links, any in-app way to open another member's
+  wheel, notes, task notes or unshared tasks, and sharing by default. To share a
+  wheel, a member sends the PDF; to share the rest, they share a screen.
 - Any derived or averaged score.
 - Notifications, reminders or nudges about neglected spokes. The opt-in
   morning note is the one exception, and it still must not mention an

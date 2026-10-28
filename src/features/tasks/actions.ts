@@ -42,6 +42,8 @@ function emptyToNull(value: string | null | undefined) {
 function refreshTasks() {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+  // A task's sharing shows on each board's Goals tab.
+  revalidatePath("/boards/[boardId]", "page");
 }
 
 /** What the member writes and chooses about the task itself. */
@@ -51,6 +53,7 @@ function contentFields(data: {
   tag?: TaskItem["tag"];
   status: TaskItem["status"];
   priority?: TaskItem["priority"];
+  progress?: number;
   plannedStartOn?: string | null;
   plannedStartTime?: string | null;
   targetOn?: string | null;
@@ -64,6 +67,8 @@ function contentFields(data: {
     tag: data.tag ?? null,
     status: data.status,
     priority: data.priority ?? "flexi",
+    // Left alone when the form did not send one.
+    ...(data.progress === undefined ? {} : { progress: data.progress }),
     planned_start_on: plannedStartOn,
     // A time belongs to its day; with no day there is no time.
     planned_start_time: plannedStartOn ? emptyToNull(data.plannedStartTime) : null,
@@ -122,7 +127,16 @@ async function loadSpawnedOccurrence(
   if (error || !data) {
     return undefined;
   }
-  return mapTaskRow(data, planIds, []);
+  const { data: shares } = await supabase
+    .from("task_board_shares")
+    .select("board_id")
+    .eq("task_id", data.id);
+  return mapTaskRow(
+    data,
+    planIds,
+    [],
+    (shares ?? []).map((share) => share.board_id),
+  );
 }
 
 async function assertOwnedPlans(
@@ -184,6 +198,51 @@ async function replacePlanLinks(
   return { ok: true as const };
 }
 
+async function replaceBoardShares(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  taskId: string,
+  boardIds: string[],
+): Promise<{ error: string } | { ids: string[] }> {
+  const unique = [...new Set(boardIds)];
+
+  const { error: clearError } = await supabase
+    .from("task_board_shares")
+    .delete()
+    .eq("task_id", taskId);
+
+  if (clearError) {
+    return { error: clearError.message };
+  }
+
+  if (unique.length === 0) {
+    return { ids: unique };
+  }
+
+  // RLS only lets a member share onto a board they belong to.
+  const { error: insertError } = await supabase
+    .from("task_board_shares")
+    .insert(unique.map((board_id) => ({ task_id: taskId, board_id })));
+
+  if (insertError) {
+    if (insertError.message.includes("row-level security")) {
+      return { error: "You can only share a task with a board you belong to." };
+    }
+    return { error: insertError.message };
+  }
+  return { ids: unique };
+}
+
+async function loadBoardShareIds(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  taskId: string,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from("task_board_shares")
+    .select("board_id")
+    .eq("task_id", taskId);
+  return (data ?? []).map((share) => share.board_id);
+}
+
 export async function createTask(input: unknown): Promise<TaskActionResult> {
   const parsed = createTaskSchema.safeParse(input);
   if (!parsed.success) {
@@ -211,10 +270,15 @@ export async function createTask(input: unknown): Promise<TaskActionResult> {
     return { error: links.error };
   }
 
+  const shares = await replaceBoardShares(supabase, data.id, parsed.data.boardIds ?? []);
+  if ("error" in shares) {
+    return { error: shares.error };
+  }
+
   refreshTasks();
   return {
     ok: true,
-    task: mapTaskRow(data, parsed.data.planIds ?? [], []),
+    task: mapTaskRow(data, parsed.data.planIds ?? [], [], shares.ids),
   };
 }
 
@@ -245,6 +309,11 @@ export async function updateTask(input: unknown): Promise<TaskActionResult> {
     return { error: links.error };
   }
 
+  const shares = await replaceBoardShares(supabase, data.id, parsed.data.boardIds ?? []);
+  if ("error" in shares) {
+    return { error: shares.error };
+  }
+
   const notes = await loadTaskNotes(supabase, data.id);
   if ("error" in notes) {
     return { error: notes.error };
@@ -253,7 +322,7 @@ export async function updateTask(input: unknown): Promise<TaskActionResult> {
   refreshTasks();
   return {
     ok: true,
-    task: mapTaskRow(data, parsed.data.planIds ?? [], notes.notes),
+    task: mapTaskRow(data, parsed.data.planIds ?? [], notes.notes, shares.ids),
   };
 }
 
@@ -278,7 +347,7 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
     return { error: error?.message ?? "The status could not be saved." };
   }
 
-  const [{ data: notes }, { data: links }] = await Promise.all([
+  const [{ data: notes }, { data: links }, boardIds] = await Promise.all([
     supabase
       .from("task_notes")
       .select("id, note, created_at")
@@ -288,6 +357,7 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
       .from("task_action_plans")
       .select("action_plan_id")
       .eq("task_id", data.id),
+    loadBoardShareIds(supabase, data.id),
   ]);
 
   const planIds = (links ?? []).map((link) => link.action_plan_id);
@@ -299,6 +369,7 @@ export async function updateTaskStatus(input: unknown): Promise<TaskActionResult
       note: note.note,
       createdAt: note.created_at,
     })),
+    boardIds,
   );
 
   const spawned =
@@ -330,13 +401,14 @@ export async function updateTaskTarget(input: unknown): Promise<TaskActionResult
     return { error: error?.message ?? "The day could not be saved." };
   }
 
-  const [{ data: notes }, { data: links }] = await Promise.all([
+  const [{ data: notes }, { data: links }, boardIds] = await Promise.all([
     supabase
       .from("task_notes")
       .select("id, note, created_at")
       .eq("task_id", data.id)
       .order("created_at", { ascending: true }),
     supabase.from("task_action_plans").select("action_plan_id").eq("task_id", data.id),
+    loadBoardShareIds(supabase, data.id),
   ]);
 
   refreshTasks();
@@ -350,6 +422,7 @@ export async function updateTaskTarget(input: unknown): Promise<TaskActionResult
         note: note.note,
         createdAt: note.created_at,
       })),
+      boardIds,
     ),
   };
 }

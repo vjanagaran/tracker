@@ -719,6 +719,169 @@ async function main() {
       );
     }
 
+    // ---- opt-in task sharing ----
+
+    const { data: privateTask } = await asB
+      .from("tasks")
+      .insert({ user_id: ids.b, title: "B keeps this one private", status: "Not Started" })
+      .select("id")
+      .single();
+    if (!privateTask) {
+      throw new Error("B could not add a second task");
+    }
+
+    const { error: shareError } = await asB
+      .from("task_board_shares")
+      .insert({ task_id: task.id, board_id: boardId });
+    ownerOk("B can share own task with own board", !shareError, shareError?.message ?? "inserted");
+
+    const { data: ownShares } = await asB.from("task_board_shares").select("task_id, board_id");
+    ownerOk(
+      "B can read own shares",
+      ownShares?.length === 1,
+      `${ownShares?.length ?? 0} share(s)`,
+    );
+
+    const goalsAsA = await asA.rpc("board_shared_goals", { p_board_id: boardId });
+    if (goalsAsA.error) {
+      record("member can read board_shared_goals", "broken", goalsAsA.error.message);
+    } else {
+      const rows = goalsAsA.data ?? [];
+      ownerOk(
+        "member sees the task B shared",
+        rows.length === 1 && rows[0]?.task_id === task.id,
+        `${rows.length} row(s)`,
+      );
+      const keys = new Set(rows.flatMap((row) => Object.keys(row)));
+      const allowed = new Set([
+        "user_id",
+        "full_name",
+        "task_id",
+        "title",
+        "description",
+        "spoke_names",
+        "planned_start_on",
+        "target_on",
+        "status",
+        "progress",
+      ]);
+      const extra = [...keys].filter((key) => !allowed.has(key));
+      if (extra.length > 0) {
+        record("board_shared_goals returns the agreed columns only", "open", extra.join(", "));
+      } else {
+        record("board_shared_goals returns the agreed columns only", "pass", `${keys.size} keys`);
+      }
+      const leaksUnshared = rows.some((row) => row.task_id === privateTask.id);
+      record(
+        "board_shared_goals omits tasks that were not shared",
+        leaksUnshared ? "open" : "pass",
+        leaksUnshared ? "unshared task returned" : "unshared task absent",
+      );
+      record(
+        "board_shared_goals carries the spoke of a linked plan",
+        rows[0]?.spoke_names === "Health" ? "pass" : "broken",
+        String(rows[0]?.spoke_names),
+      );
+    }
+
+    // Sharing opens one function, not the tables: the row itself stays private.
+    const taskStillPrivate = await asA.from("tasks").select("id").eq("id", task.id);
+    deniedRead("A still cannot read a shared task row", taskStillPrivate.data, taskStillPrivate.error);
+    const notesStillPrivate = await asA.from("task_notes").select("id").eq("task_id", task.id);
+    deniedRead(
+      "A still cannot read notes on a shared task",
+      notesStillPrivate.data,
+      notesStillPrivate.error,
+    );
+    const sharesAsA = await asA.from("task_board_shares").select("task_id");
+    deniedRead("A cannot read B's share list", sharesAsA.data, sharesAsA.error);
+
+    deniedWrite(
+      "A cannot share B's task",
+      await asA
+        .from("task_board_shares")
+        .insert({ task_id: privateTask.id, board_id: boardId })
+        .select(),
+    );
+    deniedWrite(
+      "A cannot unshare B's task",
+      await asA.from("task_board_shares").delete().eq("task_id", task.id).select(),
+    );
+
+    const { data: cTask } = await asC
+      .from("tasks")
+      .insert({ user_id: ids.c, title: "C's own task", status: "Not Started" })
+      .select("id")
+      .single();
+    if (cTask) {
+      deniedWrite(
+        "non-member cannot share a task with a board",
+        await asC
+          .from("task_board_shares")
+          .insert({ task_id: cTask.id, board_id: boardId })
+          .select(),
+      );
+    }
+
+    for (const outsider of [
+      { label: "non-member", client: asC },
+      { label: "superadmin", client: asS },
+    ]) {
+      const goals = await outsider.client.rpc("board_shared_goals", { p_board_id: boardId });
+      const blocked =
+        Boolean(goals.error && /not a member/i.test(goals.error.message)) ||
+        (goals.data ?? []).length === 0;
+      record(
+        `${outsider.label} cannot read board_shared_goals`,
+        blocked ? "pass" : "open",
+        goals.error?.message ?? `${goals.data?.length ?? 0} row(s)`,
+      );
+    }
+
+    // ---- company profiles ----
+
+    const { data: sharedCompany, error: companyError } = await asB
+      .from("companies")
+      .insert({ user_id: ids.b, name: "B Works", is_shared: true })
+      .select("id")
+      .single();
+    ownerOk("B can add a company", Boolean(sharedCompany && !companyError), companyError?.message ?? "inserted");
+    const { data: privateCompany } = await asB
+      .from("companies")
+      .insert({ user_id: ids.b, name: "B Private", is_shared: false })
+      .select("id")
+      .single();
+    if (!sharedCompany || !privateCompany) {
+      throw new Error("B could not add companies");
+    }
+
+    const aSeesCompanies = await asA.from("companies").select("id").eq("user_id", ids.b);
+    const aIds = (aSeesCompanies.data ?? []).map((row) => row.id);
+    ownerOk(
+      "co-member sees a shared company and not a private one",
+      aIds.length === 1 && aIds[0] === sharedCompany.id,
+      `${aIds.length} row(s)`,
+    );
+    for (const outsider of [
+      { label: "non-member", client: asC },
+      { label: "superadmin", client: asS },
+    ]) {
+      const seen = await outsider.client.from("companies").select("id").eq("user_id", ids.b);
+      deniedRead(`${outsider.label} cannot read B companies`, seen.data, seen.error);
+    }
+    deniedWrite(
+      "A cannot update B's company",
+      await asA.from("companies").update({ name: "Hijacked" }).eq("id", sharedCompany.id).select(),
+    );
+    deniedWrite(
+      "A cannot delete B's company",
+      await asA.from("companies").delete().eq("id", sharedCompany.id).select(),
+    );
+    deniedWrite(
+      "A cannot add a company for B",
+      await asA.from("companies").insert({ user_id: ids.b, name: "Stolen" }).select(),
+    );
+
     const deleteHistoric = await asB.from("spokes").delete().eq("id", bHealth.id).select();
     if (deleteHistoric.error && /disable it instead/i.test(deleteHistoric.error.message)) {
       record("spoke delete guard fires when a spoke has history", "pass", deleteHistoric.error.message);

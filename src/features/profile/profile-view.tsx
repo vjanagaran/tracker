@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { User } from "lucide-react";
+import { CompanyRow } from "@/features/companies/company-card";
+import type { Company } from "@/features/companies/types";
 import type { PublicProfile } from "./types";
 
 function displayUrl(value: string) {
@@ -13,16 +15,9 @@ function displayUrl(value: string) {
 }
 
 function MetaLine({ profile }: { profile: PublicProfile }) {
-  const parts = [
-    profile.designation,
-    profile.company
-      ? profile.companyFoundedYear
-        ? `${profile.company}, ${profile.companyFoundedYear}`
-        : profile.company
-      : null,
-    profile.industry,
-    profile.city,
-  ].filter((part): part is string => Boolean(part));
+  const parts = [profile.designation, profile.city].filter((part): part is string =>
+    Boolean(part),
+  );
 
   if (parts.length === 0) {
     return null;
@@ -34,13 +29,14 @@ function MetaLine({ profile }: { profile: PublicProfile }) {
 export function ProfileView({
   profile,
   isOwn,
+  companies,
 }: {
   profile: PublicProfile;
   isOwn: boolean;
+  companies: Company[];
 }) {
   const name = profile.fullName || "Unnamed";
-  const hasCompany =
-    Boolean(profile.aboutCompany) || Boolean(profile.website) || Boolean(profile.linkedin);
+  const hasLinks = Boolean(profile.linkedin);
   const hasReach = Boolean(profile.email) || Boolean(profile.phone);
 
   return (
@@ -81,27 +77,10 @@ export function ProfileView({
         </section>
       ) : null}
 
-      {hasCompany ? (
+      {hasLinks ? (
         <section className="mt-10">
-          <h2 className="text-sm font-medium">Company</h2>
-          {profile.aboutCompany ? (
-            <p className="mt-2 max-w-prose whitespace-pre-wrap text-sm leading-relaxed">
-              {profile.aboutCompany}
-            </p>
-          ) : null}
-          <ul className="mt-3 flex flex-col gap-1 text-sm">
-            {profile.website ? (
-              <li>
-                <a
-                  href={profile.website}
-                  className="inline-flex min-h-11 items-center text-primary underline-offset-4 hover:underline md:min-h-0"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {displayUrl(profile.website)}
-                </a>
-              </li>
-            ) : null}
+          <h2 className="text-sm font-medium">Links</h2>
+          <ul className="mt-2 flex flex-col gap-1 text-sm">
             {profile.linkedin ? (
               <li>
                 <a
@@ -114,6 +93,17 @@ export function ProfileView({
                 </a>
               </li>
             ) : null}
+          </ul>
+        </section>
+      ) : null}
+
+      {companies.length > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-sm font-medium">{companies.length === 1 ? "Company" : "Companies"}</h2>
+          <ul className="mt-2 border-t border-border">
+            {companies.map((company) => (
+              <CompanyRow key={company.id} company={company} />
+            ))}
           </ul>
         </section>
       ) : null}

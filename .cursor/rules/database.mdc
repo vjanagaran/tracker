@@ -62,9 +62,18 @@ another use without asking.
 - `create_wheel_cycle(wheel_id, period)` — creates the month's cycle and
   prefills from the latest earlier one. `SECURITY INVOKER`, so RLS does the
   ownership check. Call it rather than inserting cycles by hand.
-- `board_velocity(board_id, from, to)` — the only cross-member read. Counts and
-  names only. Raises if the caller is not an active board member.
+- `board_velocity(board_id, from, to)` — cross-member read. Counts and names
+  only. Raises if the caller is not an active board member.
+- `board_shared_goals(board_id)` — cross-member read of tasks the owner ticked
+  as shared with that board, through `task_board_shares`. Fixed columns, no
+  notes. Raises if the caller is not an active board member. `task_board_shares`
+  is owner-only; other members never read it or `tasks` directly.
 - `meeting_window(meeting_id)` — previous meeting to this one.
+
+- `companies` — a person's company profiles. Owner writes; co-members read rows
+  with `is_shared` through plain RLS (`shares_board_with`), not a function. The
+  `company-brochures` bucket is private and its read policy follows the company
+  row, so `is_shared` is respected; `company-logos` is public like `avatars`.
 
 ## Query patterns
 

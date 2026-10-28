@@ -43,7 +43,7 @@ import { useTasks } from "./use-tasks";
 import { useToday } from "./use-today";
 import { useViewState } from "./use-view-state";
 import type { TaskLayout } from "./url";
-import type { PlanOption, TaskItem, TaskTreeWheel } from "./types";
+import type { PlanOption, ShareBoardOption, TaskItem, TaskTreeWheel } from "./types";
 
 type Mode =
   | { view: "list" }
@@ -78,12 +78,14 @@ export function TaskWorkspace({
   initialTasks,
   plans,
   tree,
+  boards,
   serverToday,
   timeZone,
 }: {
   initialTasks: TaskItem[];
   plans: PlanOption[];
   tree: TaskTreeWheel[];
+  boards: ShareBoardOption[];
   serverToday: string;
   timeZone: string | null;
 }) {
@@ -160,7 +162,14 @@ export function TaskWorkspace({
 
   const editor =
     mode.view === "create" ? (
-      <TaskForm plans={plans} tree={tree} today={today} onSaved={saved} onCancel={close} />
+      <TaskForm
+        plans={plans}
+        tree={tree}
+        boards={boards}
+        today={today}
+        onSaved={saved}
+        onCancel={close}
+      />
     ) : editing ? (
       <>
         <TaskForm
@@ -168,6 +177,7 @@ export function TaskWorkspace({
           task={editing}
           plans={plans}
           tree={tree}
+          boards={boards}
           today={today}
           onSaved={saved}
           onCancel={close}

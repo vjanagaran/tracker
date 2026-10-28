@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { LogOut, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/features/auth/actions";
 import { InviteFriendForm } from "@/features/invite/invite-friend-form";
@@ -13,17 +12,17 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, phone, photo_url, is_superadmin, designation, company, company_founded_year, industry, city, about, about_company, website, linkedin, morning_note_on, timezone",
+      "full_name, phone, photo_url, is_superadmin, designation, city, about, linkedin, morning_note_on, timezone",
     )
     .eq("id", user.id)
     .maybeSingle();
 
   return (
     <>
-      <PageHeader
-        title="Profile"
-        description="This is what people on your board can see."
-      />
+      <p className="mb-2 max-w-prose text-sm text-muted-foreground">
+        This is what people on your board can see about you. Company details live under
+        Companies.
+      </p>
       <p className="mb-6">
         <Link
           href={`/people/${user.id}`}
@@ -53,15 +52,8 @@ export default async function ProfilePage() {
           fullName: profile?.full_name ?? "",
           phone: profile?.phone ?? "",
           designation: profile?.designation ?? "",
-          company: profile?.company ?? "",
-          companyFoundedYear: profile?.company_founded_year
-            ? String(profile.company_founded_year)
-            : "",
-          industry: profile?.industry ?? "",
           city: profile?.city ?? "",
           about: profile?.about ?? "",
-          aboutCompany: profile?.about_company ?? "",
-          website: profile?.website ?? "",
           linkedin: profile?.linkedin ?? "",
           morningNoteOn: profile?.morning_note_on ?? false,
           timezone: profile?.timezone ?? "",

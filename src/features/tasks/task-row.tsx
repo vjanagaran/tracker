@@ -16,6 +16,8 @@ import { startTaskDrag } from "./drag";
 import { relativeDay, startLabel } from "./grouping";
 import { repeatLabel } from "./labels";
 import { PRIORITY } from "./priority";
+import { ProgressBar } from "./progress-bar";
+import { canSetProgress } from "./progress";
 import { TASK_STATUSES, isOpenStatus, type PlanOption, type TaskItem, type TaskStatus } from "./types";
 
 export const statusTone: Record<TaskStatus, BadgeTone> = {
@@ -269,6 +271,14 @@ export function TaskRow({
             {showDate && timeText ? " · " : null}
             {timeText}
           </span>
+        ) : null}
+        {canSetProgress(task.status) ? (
+          <ProgressBar
+            value={task.progress}
+            status={task.status}
+            label={task.title}
+            large={large}
+          />
         ) : null}
         <StatusSelect
           title={task.title}

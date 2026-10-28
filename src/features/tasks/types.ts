@@ -64,6 +64,8 @@ export type TaskItem = {
   tag: TaskTag | null;
   status: TaskStatus;
   priority: TaskPriority;
+  /** 0 to 100 in steps of 5, set by the member. Read it through effectiveProgress. */
+  progress: number;
   plannedStartOn: string | null;
   /** HH:MM, only ever with a planned start day. */
   plannedStartTime: string | null;
@@ -77,8 +79,13 @@ export type TaskItem = {
   /** First occurrence's id. The database stamps it; never send on insert. */
   seriesId: string;
   planIds: string[];
+  /** Boards the member has chosen to show this task to. Empty means private. */
+  boardIds: string[];
   notes: TaskNote[];
 };
+
+/** A board the member belongs to, offered as a place to share a task. */
+export type ShareBoardOption = { id: string; name: string };
 
 export function isOpenStatus(status: TaskStatus) {
   return OPEN_STATUSES.includes(status);

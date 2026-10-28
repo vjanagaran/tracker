@@ -195,46 +195,16 @@ export function ProfileForm({ defaultValues, initialPhotoUrl, email }: ProfileFo
               {...register("designation")}
             />
           </Field>
-          <Field id="company" label="Company" error={errors.company?.message}>
-            <Input
-              id="company"
-              autoComplete="organization"
-              className="min-h-11"
-              {...register("company")}
-            />
-          </Field>
-          <Field id="companyFoundedYear" label="Founded" error={errors.companyFoundedYear?.message}>
-            <Input
-              id="companyFoundedYear"
-              inputMode="numeric"
-              className="min-h-11"
-              {...register("companyFoundedYear")}
-            />
-          </Field>
-          <Field id="industry" label="Industry" error={errors.industry?.message}>
-            <Input id="industry" className="min-h-11" {...register("industry")} />
-          </Field>
           <Field id="city" label="City" error={errors.city?.message}>
             <Input id="city" autoComplete="address-level2" className="min-h-11" {...register("city")} />
           </Field>
         </div>
 
-        <Field id="aboutCompany" label="About the company" error={errors.aboutCompany?.message}>
-          <Textarea
-            id="aboutCompany"
-            rows={4}
-            className="min-h-24"
-            {...register("aboutCompany")}
-          />
-        </Field>
         <Field id="about" label="About you" error={errors.about?.message}>
           <Textarea id="about" rows={4} className="min-h-24" {...register("about")} />
         </Field>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field id="website" label="Website" error={errors.website?.message}>
-            <Input id="website" inputMode="url" className="min-h-11" {...register("website")} />
-          </Field>
           <Field id="linkedin" label="LinkedIn" error={errors.linkedin?.message}>
             <Input id="linkedin" inputMode="url" className="min-h-11" {...register("linkedin")} />
           </Field>

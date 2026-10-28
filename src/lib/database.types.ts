@@ -133,6 +133,110 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          about: string | null
+          address: string | null
+          brochure_name: string | null
+          brochure_path: string | null
+          brochure_size: number | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          core_values: string[]
+          created_at: string
+          founded_year: number | null
+          gst_number: string | null
+          id: string
+          industry: string | null
+          is_shared: boolean
+          logo_url: string | null
+          mission: string | null
+          name: string
+          pincode: string | null
+          purpose: string | null
+          socials: Json
+          sort_order: number
+          state: string | null
+          tagline: string | null
+          updated_at: string
+          user_id: string
+          vision: string | null
+          website: string | null
+        }
+        Insert: {
+          about?: string | null
+          address?: string | null
+          brochure_name?: string | null
+          brochure_path?: string | null
+          brochure_size?: number | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          core_values?: string[]
+          created_at?: string
+          founded_year?: number | null
+          gst_number?: string | null
+          id?: string
+          industry?: string | null
+          is_shared?: boolean
+          logo_url?: string | null
+          mission?: string | null
+          name: string
+          pincode?: string | null
+          purpose?: string | null
+          socials?: Json
+          sort_order?: number
+          state?: string | null
+          tagline?: string | null
+          updated_at?: string
+          user_id: string
+          vision?: string | null
+          website?: string | null
+        }
+        Update: {
+          about?: string | null
+          address?: string | null
+          brochure_name?: string | null
+          brochure_path?: string | null
+          brochure_size?: number | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          core_values?: string[]
+          created_at?: string
+          founded_year?: number | null
+          gst_number?: string | null
+          id?: string
+          industry?: string | null
+          is_shared?: boolean
+          logo_url?: string | null
+          mission?: string | null
+          name?: string
+          pincode?: string | null
+          purpose?: string | null
+          socials?: Json
+          sort_order?: number
+          state?: string | null
+          tagline?: string | null
+          updated_at?: string
+          user_id?: string
+          vision?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       focus_areas: {
         Row: {
           created_at: string
@@ -551,6 +655,39 @@ export type Database = {
           },
         ]
       }
+      task_board_shares: {
+        Row: {
+          board_id: string
+          created_at: string
+          task_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          task_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_board_shares_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_board_shares_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_notes: {
         Row: {
           created_at: string
@@ -588,6 +725,7 @@ export type Database = {
           id: string
           planned_start_time: string | null
           priority: Database["public"]["Enums"]["task_priority"]
+          progress: number
           planned_start_on: string | null
           repeat_every: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until: string | null
@@ -607,6 +745,7 @@ export type Database = {
           id?: string
           planned_start_time?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
+          progress?: number
           planned_start_on?: string | null
           repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until?: string | null
@@ -626,6 +765,7 @@ export type Database = {
           id?: string
           planned_start_time?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
+          progress?: number
           planned_start_on?: string | null
           repeat_every?: Database["public"]["Enums"]["task_repeat"] | null
           repeat_until?: string | null
@@ -729,6 +869,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      board_shared_goals: {
+        Args: { p_board_id: string }
+        Returns: {
+          description: string | null
+          full_name: string
+          planned_start_on: string | null
+          progress: number | null
+          spoke_names: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          target_on: string | null
+          task_id: string
+          title: string
+          user_id: string
+        }[]
+      }
       board_velocity: {
         Args: { p_board_id: string; p_from: string; p_to: string }
         Returns: {

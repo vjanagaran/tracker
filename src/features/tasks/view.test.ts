@@ -28,6 +28,7 @@ function task(partial: Partial<TaskItem> & { id: string }): TaskItem {
     title: partial.id,
     description: null,
     priority: "flexi",
+    progress: 0,
     plannedStartTime: null,
     targetTime: null,
     tag: null,
@@ -39,6 +40,7 @@ function task(partial: Partial<TaskItem> & { id: string }): TaskItem {
     repeatUntil: null,
     seriesId: partial.id,
     planIds: [],
+    boardIds: [],
     notes: [],
     ...partial,
   };

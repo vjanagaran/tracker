@@ -1,7 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadCompaniesByOwner } from "@/features/companies/load";
 import type { Database } from "@/lib/database.types";
-import { rpcTimestamp, windowLabel } from "./labels";
-import type { BoardDashboard, BoardMeeting, MemberBoard, VelocityRow } from "./types";
+import type {
+  BoardDashboard,
+  BoardGoals,
+  BoardMeeting,
+  GoalsMember,
+  MemberBoard,
+  RosterMember,
+} from "./types";
 
 type Client = SupabaseClient<Database>;
 
@@ -44,7 +51,6 @@ export async function loadBoardDashboard(
   supabase: Client,
   userId: string,
   boardId: string,
-  meetingId?: string,
 ): Promise<BoardDashboard | null> {
   const { data: membership, error: membershipError } = await supabase
     .from("board_members")
@@ -70,17 +76,27 @@ export async function loadBoardDashboard(
     role: membership.role,
   };
 
-  const { data: meetingRows, error: meetingError } = await supabase
-    .from("meetings")
-    .select("id, scheduled_at, status, agenda, notes")
-    .eq("board_id", boardId)
-    .order("scheduled_at", { ascending: true });
+  const [meetingResult, rosterResult] = await Promise.all([
+    supabase
+      .from("meetings")
+      .select("id, scheduled_at, status, agenda, notes")
+      .eq("board_id", boardId)
+      .order("scheduled_at", { ascending: true }),
+    supabase
+      .from("board_members")
+      .select("user_id, role, profiles(full_name, photo_url, phone, email)")
+      .eq("board_id", boardId)
+      .eq("status", "active"),
+  ]);
 
-  if (meetingError) {
-    throw new Error(meetingError.message);
+  if (meetingResult.error) {
+    throw new Error(meetingResult.error.message);
+  }
+  if (rosterResult.error) {
+    throw new Error(rosterResult.error.message);
   }
 
-  const meetings: BoardMeeting[] = (meetingRows ?? []).map((row) => ({
+  const meetings: BoardMeeting[] = (meetingResult.data ?? []).map((row) => ({
     id: row.id,
     scheduledAt: row.scheduled_at,
     status: row.status,
@@ -88,118 +104,95 @@ export async function loadBoardDashboard(
     notes: row.notes,
   }));
 
-  const liveMeetings = meetings.filter((meeting) => meeting.status !== "Cancelled");
   const nowMs = Date.now();
-  const upcoming = liveMeetings.filter(
-    (meeting) => new Date(meeting.scheduledAt).getTime() >= nowMs,
+  const upcoming = meetings.filter(
+    (meeting) =>
+      meeting.status !== "Cancelled" && new Date(meeting.scheduledAt).getTime() >= nowMs,
   );
-  const past = liveMeetings.filter((meeting) => new Date(meeting.scheduledAt).getTime() < nowMs);
-  const defaultMeeting = upcoming[0] ?? past[past.length - 1] ?? null;
-  const selectedMeeting =
-    liveMeetings.find((meeting) => meeting.id === meetingId) ?? defaultMeeting;
 
-  let windowFrom: string | null = null;
-  let windowTo: string | null = null;
-  let velocity: VelocityRow[] = [];
+  const companiesByOwner = await loadCompaniesByOwner(
+    supabase,
+    (rosterResult.data ?? []).map((row) => row.user_id),
+  );
 
-  if (selectedMeeting) {
-    const { data: windowRows, error: windowError } = await supabase.rpc(
-      "meeting_window",
-      { p_meeting_id: selectedMeeting.id },
-    );
-
-    if (windowError) {
-      if (windowError.message.toLowerCase().includes("not a member")) {
-        return null;
-      }
-      throw new Error(windowError.message);
-    }
-
-    const window = windowRows?.[0];
-    windowFrom = window?.window_from ?? null;
-    windowTo = window?.window_to ?? null;
-
-    if (windowFrom && windowTo) {
-      const { data: velocityRows, error: velocityError } = await supabase.rpc(
-        "board_velocity",
-        {
-          p_board_id: boardId,
-          p_from: rpcTimestamp(windowFrom),
-          p_to: rpcTimestamp(windowTo),
-        },
-      );
-
-      if (velocityError) {
-        if (velocityError.message.toLowerCase().includes("not a member")) {
-          return null;
-        }
-        throw new Error(velocityError.message);
-      }
-
-      velocity = (velocityRows ?? []).map((row) => ({
-        userId: row.user_id,
-        fullName: row.full_name,
-        photoUrl: null,
-        email: null,
-        phone: null,
-        role: "director",
-        completedCount: Number(row.completed_count),
-        openCount: Number(row.open_count),
-      }));
-
-      const memberIds = velocity.map((row) => row.userId);
-      if (memberIds.length > 0) {
-        const [{ data: profiles, error: profileError }, { data: roles, error: roleError }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("id, photo_url, phone, email")
-              .in("id", memberIds),
-            supabase
-              .from("board_members")
-              .select("user_id, role")
-              .eq("board_id", boardId)
-              .eq("status", "active")
-              .in("user_id", memberIds),
-          ]);
-
-        if (profileError) {
-          throw new Error(profileError.message);
-        }
-        if (roleError) {
-          throw new Error(roleError.message);
-        }
-
-        const profileById = new Map((profiles ?? []).map((row) => [row.id, row]));
-        const roleById = new Map((roles ?? []).map((row) => [row.user_id, row.role]));
-        velocity = velocity.map((row) => {
-          const profile = profileById.get(row.userId);
-          return {
-            ...row,
-            photoUrl: profile?.photo_url ?? null,
-            email: profile?.email ?? null,
-            phone: profile?.phone ?? null,
-            role: roleById.get(row.userId) ?? "director",
-          };
-        });
-      }
-    }
-  }
+  const members: RosterMember[] = (rosterResult.data ?? [])
+    .map((row) => ({
+      userId: row.user_id,
+      fullName: row.profiles?.full_name ?? "",
+      photoUrl: row.profiles?.photo_url ?? null,
+      email: row.profiles?.email ?? null,
+      phone: row.profiles?.phone ?? null,
+      role: row.role,
+      companies: (companiesByOwner.get(row.user_id) ?? []).map((company) => ({
+        id: company.id,
+        name: company.name,
+      })),
+    }))
+    .sort((a, b) => (a.fullName || "Unnamed").localeCompare(b.fullName || "Unnamed"));
 
   return {
     board,
     canSchedule: membership.role === "chairman",
     meetings,
     nextMeetingId: upcoming[0]?.id ?? null,
-    selectedMeeting,
-    windowFrom,
-    windowTo,
-    windowLabel: windowLabel({
-      windowFrom,
-      windowTo,
-      nextMeetingAt: upcoming[0]?.scheduledAt ?? null,
-      viewingNext: selectedMeeting?.id === upcoming[0]?.id,
-    }),
-    velocity,
+    members,
   };
+}
+
+/**
+ * Everything members of this board have chosen to show it, grouped by member.
+ * Reads through board_shared_goals, which returns a fixed set of columns for
+ * shared tasks only. Returns null when the caller is not an active member.
+ */
+export async function loadBoardGoals(
+  supabase: Client,
+  userId: string,
+  boardId: string,
+): Promise<BoardGoals | null> {
+  const [rosterResult, goalsResult] = await Promise.all([
+    supabase
+      .from("board_members")
+      .select("user_id, profiles(full_name)")
+      .eq("board_id", boardId)
+      .eq("status", "active"),
+    supabase.rpc("board_shared_goals", { p_board_id: boardId }),
+  ]);
+
+  if (goalsResult.error) {
+    if (goalsResult.error.message.toLowerCase().includes("not a member")) {
+      return null;
+    }
+    throw new Error(goalsResult.error.message);
+  }
+  if (rosterResult.error) {
+    throw new Error(rosterResult.error.message);
+  }
+
+  const byUser = new Map<string, GoalsMember>();
+  for (const row of rosterResult.data ?? []) {
+    byUser.set(row.user_id, {
+      userId: row.user_id,
+      fullName: row.profiles?.full_name ?? "",
+      isYou: row.user_id === userId,
+      goals: [],
+    });
+  }
+
+  for (const row of goalsResult.data ?? []) {
+    byUser.get(row.user_id)?.goals.push({
+      taskId: row.task_id,
+      title: row.title,
+      description: row.description,
+      spokeNames: row.spoke_names,
+      plannedStartOn: row.planned_start_on,
+      targetOn: row.target_on,
+      status: row.status,
+      progress: row.progress,
+    });
+  }
+
+  const members = [...byUser.values()].sort((a, b) =>
+    (a.fullName || "Unnamed").localeCompare(b.fullName || "Unnamed"),
+  );
+  return { members };
 }
